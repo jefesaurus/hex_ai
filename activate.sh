@@ -1,0 +1,8 @@
+if [[ -z "$WORKSPACE_ROOT" ]]
+then
+    WORKSPACE_SETUP_SH=${BASH_SOURCE[0]}
+    WORKSPACE_ROOT=$(dirname $(readlink -e $WORKSPACE_SETUP_SH))
+fi
+export WORKSPACE_ROOT
+export PATH=$WORKSPACE_ROOT/tools/bin:$PATH
+export PYTHONPATH=$WORKSPACE_ROOT:$PYTHONPATH
