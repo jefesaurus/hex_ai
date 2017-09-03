@@ -36,5 +36,14 @@ inline Duration FromHz(double hz) {
 
 inline double ToHz(Duration period) { return 1.0 / ToSeconds<double>(period); }
 
-std::ostream& operator<<(std::ostream& os, const TimePoint& time_point);
-std::ostream& operator<<(std::ostream& os, const Duration& duration);
+template<class OStream>
+OStream& operator<<(OStream& os, const TimePoint& time_point) {
+  os << ToSecondsSinceReference<double>(time_point) << "s";
+  return os;
+}
+
+template<class OStream>
+OStream& operator<<(OStream& os, const Duration& duration) {
+  os << ToSeconds<double>(duration) << "s";
+  return os;
+}
