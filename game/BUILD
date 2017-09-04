@@ -1,10 +1,19 @@
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
+    name = "cell_state",
+    hdrs = ["cell_state.h"],
+    deps = [],
+)
+
+cc_library(
     name = "hex_state",
     srcs = ["hex_state.cc"],
     hdrs = ["hex_state.h"],
-    deps = ["//base:logging"],
+    deps = [
+        ":cell_state",
+        "//base:logging",
+    ],
 )
 
 cc_binary(

@@ -46,14 +46,14 @@ int main(int argc, char** argv) {
   // Trying to compare access speeds in a packed bits structure.
   PackedHexState<11> state;
   HexState<11> state_control;
-  LOG()->info("Size of packed state: {}", sizeof(state));
-  LOG()->info("Size of normal state: {}", sizeof(state_control));
+  LOG(INFO, "Size of packed state: {}", sizeof(state));
+  LOG(INFO, "Size of normal state: {}", sizeof(state_control));
 
   std::mt19937 rng;
   rng.seed(0);
   std::uniform_int_distribution<uint32_t> uniform(0, 10);
   std::vector<std::pair<int, int>> coords;
-  const int kCount = 100000000;
+  const int kCount = 1000000;
   for (int i = 0; i < kCount; ++i) {
     coords.emplace_back(uniform(rng), uniform(rng));
   }
@@ -62,21 +62,23 @@ int main(int argc, char** argv) {
   timer.Start();
   SetStateToBlack(coords, &state);
   timer.Stop();
-  LOG()->info("Random write packed: {}", timer.Elapsed());
+  LOG(INFO, "Random write packed: {}", timer.Elapsed());
   timer.Start();
   SetStateToBlack(coords, &state_control);
   timer.Stop();
-  LOG()->info("Random write normal: {}", timer.Elapsed());
+  LOG(INFO, "Random write normal: {}", timer.Elapsed());
   timer.Start();
   int result_packed = ReadFromState(state, coords);
   timer.Stop();
-  LOG()->info("Random read packed: {}", timer.Elapsed());
+  LOG(INFO, "Random read packed: {}", timer.Elapsed());
   timer.Start();
   int result_normal = ReadFromState(state_control, coords);
   timer.Stop();
-  LOG()->info("Random read normal: {}", timer.Elapsed());
+  LOG(INFO, "Random read normal: {}", timer.Elapsed());
   if (result_packed == result_normal) {
-    LOG()->info("Need to use the results so they don't get elided.");
+    LOG(INFO, "Need to use the results so they don't get elided.");
   }
+  LOG(INFO, "{}", IsGameFinished(state));
+  LOG(INFO, "{}", IsGameFinished(state_control));
   return 0;
 }

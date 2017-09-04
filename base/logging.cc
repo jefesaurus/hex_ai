@@ -14,11 +14,12 @@ std::shared_ptr<spdlog::logger> onetime_create_log() {
     // co-mingling their character bytes.
     result = spdlog::stderr_logger_mt("console");
   }
+  result->set_pattern("[%L | %T | %t] %v");
   return result;
 }
 }  // namespace
 
-spdlog::logger* LOG() {
+spdlog::logger* GetLogger() {
   static const never_destroyed<std::shared_ptr<spdlog::logger>> g_logger(
       onetime_create_log());
   return g_logger.access().get();
