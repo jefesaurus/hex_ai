@@ -3,4 +3,5 @@
 
 void Init(int* argc, char*** argv) {
   google::ParseCommandLineFlags(argc, argv, false);
+  ConfigureEasyLogging(argc, argv);
 }

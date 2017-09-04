@@ -1,16 +1,8 @@
 package(default_visibility = ["//visibility:public"])
 
-cc_binary(
-    name = "init_example",
-    srcs = ["init_example.cc"],
-    deps = [":init"],
-)
-
 cc_library(
     name = "base",
-    hdrs = [
-        "never_destroyed.h",
-    ],
+    deps = [":logging", ":init", ":time", ":wall_timer"],
 )
 
 cc_library(
@@ -21,14 +13,12 @@ cc_library(
 
 cc_library(
     name = "logging",
-    srcs = ["logging.cc"],
     hdrs = ["logging.h"],
     linkopts = [
         "-lgflags",
     ],
     deps = [
-        ":base",
-        "@spdlog//:spdlog",
+        "@easyloggingpp//:easyloggingpp",
     ],
 )
 
@@ -54,4 +44,16 @@ cc_library(
     deps = [
         ":logging",
     ],
+)
+
+cc_binary(
+    name = "logging_example",
+    srcs = ["logging_example.cc"],
+    deps = [":logging"],
+)
+
+cc_binary(
+    name = "init_example",
+    srcs = ["init_example.cc"],
+    deps = [":init"],
 )

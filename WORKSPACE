@@ -29,9 +29,9 @@ github_archive(
 )
 
 github_archive(
-    name = "spdlog",
-    repository = "gabime/spdlog",
-    commit = "a4e6d8877c72f1fd33f1a50c7074a149782a7574",
-    sha256 = "b50c6b93b1130bddf6242d68f9e0078d23ea34e949517da59ef306ba9fc9147b",
-    build_file = "tools/spdlog.BUILD",
+    name = "easyloggingpp",
+    repository = "muflihun/easyloggingpp",
+    commit = "468597048ed3797e9556237f8a3c014944ae126b",
+    sha256 = "3ac7ea8e56c3ed9701c564d704b63fe7379473fe85001a85ea5cc8bd95f02886",
+    build_file = "tools/easyloggingpp.BUILD",
 )
