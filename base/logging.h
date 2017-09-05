@@ -1,4 +1,5 @@
 #pragma once
+#define ELPP_NO_DEFAULT_LOG_FILE
 #define ELPP_STL_LOGGING
 #ifdef NDEBUG
 #define ELPP_DISABLE_DEBUG_LOGS

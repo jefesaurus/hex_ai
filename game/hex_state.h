@@ -61,36 +61,27 @@ class HexState {
 
   void PropagateConnections(const CellState& base_piece, int base_index,
                             PieceType base_type) {
-    std::unordered_set<int> to_color;
+    std::vector<int> to_color;
     {
-      const auto& neighbor_data = neighbors_[base_index];
-      const auto& num_neighbors = neighbor_data.first;
-      const auto& neighbor_array = neighbor_data.second;
-      for (int i = 0; i < num_neighbors; ++i) {
-        const auto& neighbor_index = neighbor_array[i];
+      for (int neighbor_index : neighbors_[base_index]) {
         auto& neighbor = data_[neighbor_index];
         if (neighbor.data() & as_underlying(base_type)) {
           if (neighbor != base_piece) {
-            to_color.insert(neighbor_index);
+            to_color.push_back(neighbor_index);
           }
         }
       }
     }
 
     while (!to_color.empty()) {
-      auto it = to_color.begin();
-      const int current = *it;
-      to_color.erase(it);
+      const int current = to_color.back();
+      to_color.pop_back();
       data_[current] = base_piece;
-      const auto& neighbor_data = neighbors_[current];
-      const auto& num_neighbors = neighbor_data.first;
-      const auto& neighbor_array = neighbor_data.second;
-      for (int i = 0; i < num_neighbors; ++i) {
-        const auto& neighbor_index = neighbor_array[i];
+      for (int neighbor_index : neighbors_[current]) {
         auto& neighbor = data_[neighbor_index];
         if (neighbor.data() & as_underlying(base_type)) {
           if (neighbor != base_piece) {
-            to_color.insert(neighbor_index);
+            to_color.push_back(neighbor_index);
           }
         }
       }
@@ -98,14 +89,10 @@ class HexState {
   }
 
   bool PropagateNewPiece(int index, PieceType type) {
-    const auto& neighbor_data = neighbors_[index];
-    const auto& num_neighbors = neighbor_data.first;
-    const auto& neighbor_array = neighbor_data.second;
     auto& new_piece = data_[index];
 
     // Copy in connection data from neighbors.
-    for (int i = 0; i < num_neighbors; ++i) {
-      const auto& neighbor_index = neighbor_array[i];
+    for (int neighbor_index : neighbors_[index]) {
       const auto& neighbor = data_[neighbor_index];
       if (neighbor.data() & as_underlying(type)) {
         new_piece.data() |= neighbor.data();
@@ -179,7 +166,7 @@ class HexState {
     return os;
   }
 
-  const std::array<CellState, kNumCells>& data() const { return data_; }
+  const std::array<CellState, kNumCells + 1>& data() const { return data_; }
 
   static int Index(int row, int col) {
     DCHECK_GE(row, 0);
@@ -191,32 +178,24 @@ class HexState {
 
   static int SafeIndex(int row, int col) {
     if (row < 0 || row >= Size || col < 0 || col >= Size) {
-      return -1;
+      return kNumCells;
     }
     return Index(row, col);
   }
 
   // Precompute indices for the neighbors of each cell.
-  static std::array<std::pair<int, std::array<int, 6>>, kNumCells>
+  static std::array<std::array<int, 6>, kNumCells>
   ComputeNeighbors() {
-    std::array<std::pair<int, std::array<int, 6>>, kNumCells> out;
+    std::array<std::array<int, 6>, kNumCells> out;
     for (int row = 0; row < Size; ++row) {
       for (int col = 0; col < Size; ++col) {
         auto& to_set = out[Index(row, col)];
-        std::vector<int> maybe_neighbors;
-        maybe_neighbors.push_back(SafeIndex(row - 1, col));
-        maybe_neighbors.push_back(SafeIndex(row - 1, col + 1));
-        maybe_neighbors.push_back(SafeIndex(row, col - 1));
-        maybe_neighbors.push_back(SafeIndex(row, col + 1));
-        maybe_neighbors.push_back(SafeIndex(row + 1, col - 1));
-        maybe_neighbors.push_back(SafeIndex(row + 1, col));
-        int count = 0;
-        for (int maybe_neighbor : maybe_neighbors) {
-          if (maybe_neighbor >= 0) {
-            to_set.second[count++] = maybe_neighbor;
-          }
-        }
-        to_set.first = count;
+        to_set[0] = SafeIndex(row - 1, col);
+        to_set[1] = SafeIndex(row - 1, col + 1);
+        to_set[2] = SafeIndex(row, col - 1);
+        to_set[3] = SafeIndex(row, col + 1);
+        to_set[4] = SafeIndex(row + 1, col - 1);
+        to_set[5] = SafeIndex(row + 1, col);
       }
     }
     return out;
@@ -254,14 +233,11 @@ class HexState {
   }
 
  private:
-  // Fake a max size static array.
-  // TODO See if it is faster to hold the number of neighbors around explicitly
-  // or to always assume 6 and ignore sentinels
-  static std::array<std::pair<int, std::array<int, 6>>, kNumCells> neighbors_;
+  static std::array<std::array<int, 6>, kNumCells> neighbors_;
   static std::array<std::array<CellState, 3>, kNumCells> cell_templates_;
 
-  // Cells are stored row-major order.
-  std::array<CellState, kNumCells> data_{};
+  // Cells are stored row-major order, with one more on the end as a sentinel.
+  std::array<CellState, kNumCells + 1> data_{};
 
   PieceType winner_;
 
@@ -269,7 +245,7 @@ class HexState {
 };
 
 template <int Size>
-std::array<std::pair<int, std::array<int, 6>>, HexState<Size>::kNumCells>
+std::array<std::array<int, 6>, HexState<Size>::kNumCells>
     HexState<Size>::neighbors_ = HexState<Size>::ComputeNeighbors();
 
 template <int Size>

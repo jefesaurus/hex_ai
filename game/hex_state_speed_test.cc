@@ -4,6 +4,8 @@
 
 #include <random>
 
+DEFINE_int32(num_trials, 100, "Num trials");
+
 void RandomPlayouts(int num_trials) {
   std::vector<int> moves;
   for (int i = 0; i < HexState<11>::kNumCells; ++i) {
@@ -12,32 +14,30 @@ void RandomPlayouts(int num_trials) {
   std::array<PieceType, 2> players = {PieceType::kVertical,
                                       PieceType::kHorizontal};
 
-  std::vector<std::vector<int>> move_sets(num_trials);
-  for (int i = 0; i < num_trials; ++i) {
-    move_sets[i] = moves;
-    std::random_shuffle(move_sets[i].begin(), move_sets[i].end());
-  }
+  std::random_shuffle(moves.begin(), moves.end());
 
   WallTimer timer;
 
   std::array<int, 3> wins = {0, 0, 0};
-  timer.Start();
+  Duration placing_duration(0);
   for (int i = 0; i < num_trials; ++i) {
     HexState<11> state;
     int move_number(0);
     while (!state.GameIsOver()) {
-      state.SetPiece(move_sets[i][move_number], players[move_number % 2]);
+      timer.Start();
+      state.SetPiece(moves[move_number], players[move_number % 2]);
+      timer.Stop();
+      placing_duration+= timer.Elapsed();
       move_number++;
     }
     ++wins[as_underlying(state.Winner())];
   }
-  timer.Stop();
   LOG(INFO) << std::vector<int>(wins.begin(), wins.end());
-  LOG(INFO) << timer.Elapsed();
+  LOG(INFO) << "Placing duration: " << placing_duration;
 }
 
 int main(int argc, char** argv) {
   Init(&argc, &argv);
-  RandomPlayouts(1000000);
+  RandomPlayouts(FLAGS_num_trials);
   return 0;
 }
