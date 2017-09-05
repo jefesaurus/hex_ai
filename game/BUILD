@@ -27,6 +27,8 @@ cc_binary(
 cc_binary(
     name = "hex_state_speed_test",
     srcs = ["hex_state_speed_test.cc"],
+    #linkopts = ["-pg"],
+    #copts = ["-pg"],
     deps = [
         ":hex_state",
         "//base",
