@@ -4,81 +4,40 @@
 
 #include <random>
 
-int ReadFromState(const PackedHexState<11>& state,
-                  const std::vector<std::pair<int, int>>& coords) {
-  int num_white(0);
-  for (const auto& coord : coords) {
-    if (state.GetCell(coord.first, coord.second) == CellState::kBlack) {
-      ++num_white;
+void RandomPlayouts(int num_trials) {
+  std::vector<int> moves;
+  for (int i = 0; i < HexState<11>::kNumCells; ++i) {
+    moves.push_back(i);
+  }
+  std::array<PieceType, 2> players = {PieceType::kVertical,
+                                      PieceType::kHorizontal};
+
+  std::vector<std::vector<int>> move_sets(num_trials);
+  for (int i = 0; i < num_trials; ++i) {
+    move_sets[i] = moves;
+    std::random_shuffle(move_sets[i].begin(), move_sets[i].end());
+  }
+
+  WallTimer timer;
+
+  std::array<int, 3> wins = {0, 0, 0};
+  timer.Start();
+  for (int i = 0; i < num_trials; ++i) {
+    HexState<11> state;
+    int move_number(0);
+    while (!state.GameIsOver()) {
+      state.SetPiece(move_sets[i][move_number], players[move_number % 2]);
+      move_number++;
     }
+    ++wins[as_underlying(state.Winner())];
   }
-  return num_white;
-}
-
-int ReadFromState(const HexState<11>& state,
-                  const std::vector<std::pair<int, int>>& coords) {
-  int num_white(0);
-  for (const auto& coord : coords) {
-    if (state.GetCell(coord.first, coord.second) == CellState::kBlack) {
-      ++num_white;
-    }
-  }
-  return num_white;
-}
-
-void SetStateToBlack(const std::vector<std::pair<int, int>>& coords,
-                     PackedHexState<11>* state) {
-  for (const auto& coord : coords) {
-    state->SetCell(coord.first, coord.second, CellState::kBlack);
-  }
-}
-
-void SetStateToBlack(const std::vector<std::pair<int, int>>& coords,
-                     HexState<11>* state) {
-  for (const auto& coord : coords) {
-    state->SetCell(coord.first, coord.second, CellState::kBlack);
-  }
+  timer.Stop();
+  LOG(INFO) << std::vector<int>(wins.begin(), wins.end());
+  LOG(INFO) << timer.Elapsed();
 }
 
 int main(int argc, char** argv) {
   Init(&argc, &argv);
-
-  // Trying to compare access speeds in a packed bits structure.
-  PackedHexState<11> state;
-  HexState<11> state_control;
-  LOG(INFO, "Size of packed state: {}", sizeof(state));
-  LOG(INFO, "Size of normal state: {}", sizeof(state_control));
-
-  std::mt19937 rng;
-  rng.seed(0);
-  std::uniform_int_distribution<uint32_t> uniform(0, 10);
-  std::vector<std::pair<int, int>> coords;
-  const int kCount = 1000000;
-  for (int i = 0; i < kCount; ++i) {
-    coords.emplace_back(uniform(rng), uniform(rng));
-  }
-
-  WallTimer timer;
-  timer.Start();
-  SetStateToBlack(coords, &state);
-  timer.Stop();
-  LOG(INFO, "Random write packed: {}", timer.Elapsed());
-  timer.Start();
-  SetStateToBlack(coords, &state_control);
-  timer.Stop();
-  LOG(INFO, "Random write normal: {}", timer.Elapsed());
-  timer.Start();
-  int result_packed = ReadFromState(state, coords);
-  timer.Stop();
-  LOG(INFO, "Random read packed: {}", timer.Elapsed());
-  timer.Start();
-  int result_normal = ReadFromState(state_control, coords);
-  timer.Stop();
-  LOG(INFO, "Random read normal: {}", timer.Elapsed());
-  if (result_packed == result_normal) {
-    LOG(INFO, "Need to use the results so they don't get elided.");
-  }
-  LOG(INFO, "{}", IsGameFinished(state));
-  LOG(INFO, "{}", IsGameFinished(state_control));
+  RandomPlayouts(1000000);
   return 0;
 }

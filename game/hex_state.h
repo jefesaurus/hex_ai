@@ -1,5 +1,4 @@
 #pragma once
-#include <bitset>
 #include <sstream>
 #include <unordered_set>
 #include "base/logging.h"
@@ -7,19 +6,19 @@
 
 // Lower(row = 0, col = 0)
 //
-//		 ║ a ║ b ║ c ║ d ║ e ║
-//		═╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╗
-//		 1 ║ - ║ - ║ - ║ - ║ - ║
-//		═══╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╗
-//			 2 ║ - ║ - ║ - ║ - ║ - ║
-//			═══╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╗
-//				 3 ║ - ║ - ║ - ║ - ║ - ║
-//				═══╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╗
-//					 4 ║ - ║ - ║ - ║ - ║ - ║
-//					═══╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╗
-//						 5 ║ - ║ - ║ - ║ - ║ - ║
-//						═══╩═══╩═══╩═══╩═══╩═══╝
-//																Upper
+//     ║ a ║ b ║ c ║ d ║ e ║
+//    ═╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╗
+//     1 ║ - ║ - ║ - ║ - ║ - ║
+//    ═══╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╗
+//       2 ║ - ║ - ║ - ║ - ║ - ║
+//      ═══╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╗
+//         3 ║ - ║ - ║ - ║ - ║ - ║
+//        ═══╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╗
+//           4 ║ - ║ - ║ - ║ - ║ - ║
+//          ═══╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╗
+//             5 ║ - ║ - ║ - ║ - ║ - ║
+//            ═══╩═══╩═══╩═══╩═══╩═══╝
+//                                Upper
 //(row = Size, col = Size)
 
 template <int Size>
@@ -28,36 +27,28 @@ class HexState {
   static constexpr int kSize = Size;
   static constexpr int kNumCells = Size * Size;
 
-  HexState() : winner_(PieceType::kEmpty), empty_space_(kNumCells) {}
+  HexState() : winner_(PieceType::kEmpty), empty_spaces_(kNumCells) {}
 
-  bool SetHorizontalPiece(int row, int col) {
-    const int index = Index(row, col);
+  bool SetPiece(int index, PieceType type) {
     auto& new_piece = data_[index];
     DCHECK_EQ(new_piece.GetPieceType(), PieceType::kEmpty);
+    new_piece = cell_templates_[index][as_underlying(type)];
     --empty_spaces_;
-    new_piece = CellState(PieceType::kHorizontal);
-    if (col <= 0) {
-      new_piece.SetConnectedToLower();
-    }
-    if (col >= Size - 1) {
-      new_piece.SetConnectedToUpper();
-    }
-    return PropagateNewPiece(index, PieceType::kHorizontal);
+    return PropagateNewPiece(index, type);
   }
 
-  bool SetVerticalPiece(int row, int col) {
-    const int index = Index(row, col);
-    auto& new_piece = data_[index];
-    DCHECK_EQ(new_piece.GetPieceType(), PieceType::kEmpty);
-    --empty_spaces_;
-    new_piece = CellState(PieceType::kVertical);
-    if (row <= 0) {
-      new_piece.SetConnectedToLower();
+  bool SetPiece(int row, int col, PieceType type) {
+    return SetPiece(Index(row, col), type);
+  }
+
+  std::unordered_set<int> AvailableCells() const {
+    std::unordered_set<int> cells;
+    for (int i = 0; i < kNumCells; ++i) {
+      if (!data_[i].data()) {
+        cells.insert(i);
+      }
     }
-    if (row >= Size - 1) {
-      new_piece.SetConnectedToUpper();
-    }
-    return PropagateNewPiece(index, PieceType::kVertical);
+    return cells;
   }
 
   bool GameIsOver() { return winner_ != PieceType::kEmpty; }
@@ -231,20 +222,56 @@ class HexState {
     return out;
   }
 
+  static std::array<std::array<CellState, 3>, kNumCells>
+  ComputeCellTemplates() {
+    std::array<std::array<CellState, 3>, kNumCells> out;
+    for (int row = 0; row < Size; ++row) {
+      for (int col = 0; col < Size; ++col) {
+        const int index = Index(row, col);
+        {
+          auto& new_piece = out[index][as_underlying(PieceType::kHorizontal)];
+          new_piece = CellState(PieceType::kHorizontal);
+          if (col <= 0) {
+            new_piece.SetConnectedToLower();
+          }
+          if (col >= Size - 1) {
+            new_piece.SetConnectedToUpper();
+          }
+        }
+        {
+          auto& new_piece = out[index][as_underlying(PieceType::kVertical)];
+          new_piece = CellState(PieceType::kVertical);
+          if (row <= 0) {
+            new_piece.SetConnectedToLower();
+          }
+          if (row >= Size - 1) {
+            new_piece.SetConnectedToUpper();
+          }
+        }
+      }
+    }
+    return out;
+  }
+
  private:
   // Fake a max size static array.
   // TODO See if it is faster to hold the number of neighbors around explicitly
   // or to always assume 6 and ignore sentinels
   static std::array<std::pair<int, std::array<int, 6>>, kNumCells> neighbors_;
+  static std::array<std::array<CellState, 3>, kNumCells> cell_templates_;
 
   // Cells are stored row-major order.
   std::array<CellState, kNumCells> data_{};
 
-  int empty_spaces_;
-
   PieceType winner_;
+
+  int empty_spaces_;
 };
 
 template <int Size>
 std::array<std::pair<int, std::array<int, 6>>, HexState<Size>::kNumCells>
     HexState<Size>::neighbors_ = HexState<Size>::ComputeNeighbors();
+
+template <int Size>
+std::array<std::array<CellState, 3>, HexState<Size>::kNumCells>
+    HexState<Size>::cell_templates_ = HexState<Size>::ComputeCellTemplates();

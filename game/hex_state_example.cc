@@ -3,30 +3,30 @@
 
 void HorizontalPlayout() {
   HexState<5> state;
-  state.SetHorizontalPiece(0, 0);
+  state.SetPiece(0, 0, PieceType::kHorizontal);
   CHECK(!state.GameIsOver());
-  state.SetHorizontalPiece(0, 1);
+  state.SetPiece(0, 1, PieceType::kHorizontal);
   CHECK(!state.GameIsOver());
-  state.SetHorizontalPiece(0, 2);
+  state.SetPiece(0, 2, PieceType::kHorizontal);
   CHECK(!state.GameIsOver());
-  state.SetHorizontalPiece(0, 3);
+  state.SetPiece(0, 3, PieceType::kHorizontal);
   CHECK(!state.GameIsOver());
-  state.SetHorizontalPiece(0, 4);
+  state.SetPiece(0, 4, PieceType::kHorizontal);
   CHECK(state.GameIsOver()) << state;
   CHECK_EQ(state.Winner(), PieceType::kHorizontal);
 }
 
 void VerticalPlayout() {
   HexState<5> state;
-  state.SetVerticalPiece(0, 0);
+  state.SetPiece(0, 0, PieceType::kVertical);
   CHECK(!state.GameIsOver());
-  state.SetVerticalPiece(1, 0);
+  state.SetPiece(1, 0, PieceType::kVertical);
   CHECK(!state.GameIsOver());
-  state.SetVerticalPiece(2, 0);
+  state.SetPiece(2, 0, PieceType::kVertical);
   CHECK(!state.GameIsOver());
-  state.SetVerticalPiece(3, 0);
+  state.SetPiece(3, 0, PieceType::kVertical);
   CHECK(!state.GameIsOver());
-  state.SetVerticalPiece(4, 0);
+  state.SetPiece(4, 0, PieceType::kVertical);
   CHECK(state.GameIsOver()) << state;
   CHECK_EQ(state.Winner(), PieceType::kVertical);
 }
@@ -34,15 +34,6 @@ void VerticalPlayout() {
 void TestPrint() {
   {
     HexState<5> state;
-    state.SetVerticalPiece(0, 0);
-    state.SetVerticalPiece(1, 1);
-    state.SetVerticalPiece(2, 2);
-    state.SetVerticalPiece(3, 3);
-    state.SetVerticalPiece(4, 4);
-    state.SetHorizontalPiece(0, 4);
-    state.SetHorizontalPiece(1, 3);
-    state.SetHorizontalPiece(3, 1);
-    state.SetHorizontalPiece(4, 0);
     LOG(INFO) << state;
   }
   {
