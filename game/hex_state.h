@@ -61,27 +61,26 @@ class HexState {
 
   void PropagateConnections(const CellState& base_piece, int base_index,
                             PieceType base_type) {
-    std::vector<int> to_color;
+    int back = 0;
     {
       for (int neighbor_index : neighbors_[base_index]) {
         auto& neighbor = data_[neighbor_index];
         if (neighbor.data() & as_underlying(base_type)) {
           if (neighbor != base_piece) {
-            to_color.push_back(neighbor_index);
+            workspace_[back++] = neighbor_index;
           }
         }
       }
     }
 
-    while (!to_color.empty()) {
-      const int current = to_color.back();
-      to_color.pop_back();
+    while (back > 0) {
+      const int current = workspace_[--back];
       data_[current] = base_piece;
       for (int neighbor_index : neighbors_[current]) {
         auto& neighbor = data_[neighbor_index];
         if (neighbor.data() & as_underlying(base_type)) {
           if (neighbor != base_piece) {
-            to_color.push_back(neighbor_index);
+            workspace_[back++] = neighbor_index;
           }
         }
       }
@@ -184,8 +183,7 @@ class HexState {
   }
 
   // Precompute indices for the neighbors of each cell.
-  static std::array<std::array<int, 6>, kNumCells>
-  ComputeNeighbors() {
+  static std::array<std::array<int, 6>, kNumCells> ComputeNeighbors() {
     std::array<std::array<int, 6>, kNumCells> out;
     for (int row = 0; row < Size; ++row) {
       for (int col = 0; col < Size; ++col) {
@@ -235,6 +233,8 @@ class HexState {
  private:
   static std::array<std::array<int, 6>, kNumCells> neighbors_;
   static std::array<std::array<CellState, 3>, kNumCells> cell_templates_;
+
+  std::array<int, kNumCells> workspace_;
 
   // Cells are stored row-major order, with one more on the end as a sentinel.
   std::array<CellState, kNumCells + 1> data_{};
