@@ -1,9 +1,12 @@
 #pragma once
 #define ELPP_STL_LOGGING
+#ifdef NDEBUG
+#define ELPP_DISABLE_DEBUG_LOGS
+#endif
 #include <easylogging++.h>
 #include <gflags/gflags.h>
-#include <thread>
 #include <sstream>
+#include <thread>
 INITIALIZE_EASYLOGGINGPP
 
 // Read flags for EasyLogging

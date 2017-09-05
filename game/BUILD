@@ -12,7 +12,7 @@ cc_library(
     hdrs = ["hex_state.h"],
     deps = [
         ":cell_state",
-        "//base:logging",
+        "//base",
     ],
 )
 
@@ -21,7 +21,6 @@ cc_binary(
     srcs = ["hex_state_example.cc"],
     deps = [
         ":hex_state",
-        "//base:init",
     ],
 )
 
@@ -30,7 +29,6 @@ cc_binary(
     srcs = ["hex_state_speed_test.cc"],
     deps = [
         ":hex_state",
-        "//base:init",
-        "//base:wall_timer",
+        "//base",
     ],
 )

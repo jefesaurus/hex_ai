@@ -67,6 +67,18 @@ class CellState {
   bool IsConnectedToUpper() const { return data_ & 0b00000100; }
   bool IsConnectedToLower() const { return data_ & 0b00001000; }
 
+  const uint8_t& data() const { return data_; };
+
+  uint8_t& data() { return data_; };
+
+  bool operator==(const CellState& other) const {
+    return data() == other.data();
+  }
+
+  bool operator!=(const CellState& other) const {
+    return data() != other.data();
+  }
+
  private:
   uint8_t data_;
 };

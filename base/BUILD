@@ -2,7 +2,13 @@ package(default_visibility = ["//visibility:public"])
 
 cc_library(
     name = "base",
-    deps = [":logging", ":init", ":time", ":wall_timer"],
+    linkopts = ["-lm"],
+    deps = [
+        ":init",
+        ":logging",
+        ":time",
+        ":wall_timer",
+    ],
 )
 
 cc_library(
