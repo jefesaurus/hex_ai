@@ -5,17 +5,68 @@
 #include "base/logging.h"
 #include "game/cell_state.h"
 
+// Lower(row = 0, col = 0)
+//
+//		 ║ a ║ b ║ c ║ d ║ e ║
+//		═╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╗
+//		 1 ║ - ║ - ║ - ║ - ║ - ║
+//		═══╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╗
+//			 2 ║ - ║ - ║ - ║ - ║ - ║
+//			═══╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╗
+//				 3 ║ - ║ - ║ - ║ - ║ - ║
+//				═══╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╗
+//					 4 ║ - ║ - ║ - ║ - ║ - ║
+//					═══╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╗
+//						 5 ║ - ║ - ║ - ║ - ║ - ║
+//						═══╩═══╩═══╩═══╩═══╩═══╝
+//																Upper
+//(row = Size, col = Size)
+
 template <int Size>
 class HexState {
  public:
   static constexpr int kSize = Size;
   static constexpr int kNumCells = Size * Size;
 
-  HexState() : winner_(PieceType::kEmpty) {}
+  HexState() : winner_(PieceType::kEmpty), empty_space_(kNumCells) {}
 
-  void SetCell(int row, int col, CellState val) {
-    data_[row * Size + col] = val;
+  bool SetHorizontalPiece(int row, int col) {
+    const int index = Index(row, col);
+    auto& new_piece = data_[index];
+    DCHECK_EQ(new_piece.GetPieceType(), PieceType::kEmpty);
+    --empty_spaces_;
+    new_piece = CellState(PieceType::kHorizontal);
+    if (col <= 0) {
+      new_piece.SetConnectedToLower();
+    }
+    if (col >= Size - 1) {
+      new_piece.SetConnectedToUpper();
+    }
+    return PropagateNewPiece(index, PieceType::kHorizontal);
   }
+
+  bool SetVerticalPiece(int row, int col) {
+    const int index = Index(row, col);
+    auto& new_piece = data_[index];
+    DCHECK_EQ(new_piece.GetPieceType(), PieceType::kEmpty);
+    --empty_spaces_;
+    new_piece = CellState(PieceType::kVertical);
+    if (row <= 0) {
+      new_piece.SetConnectedToLower();
+    }
+    if (row >= Size - 1) {
+      new_piece.SetConnectedToUpper();
+    }
+    return PropagateNewPiece(index, PieceType::kVertical);
+  }
+
+  bool GameIsOver() { return winner_ != PieceType::kEmpty; }
+
+  PieceType Winner() { return winner_; }
+
+  CellState GetCell(int row, int col) const { return data_[row * Size + col]; }
+
+  CellState GetCell(int index) const { return data_[index]; }
 
   void PropagateConnections(const CellState& base_piece, int base_index,
                             PieceType base_type) {
@@ -80,50 +131,59 @@ class HexState {
     return false;
   }
 
-  bool SetHorizontalPiece(int row, int col) {
-    const int index = Index(row, col);
-    auto& new_piece = data_[index];
-    DCHECK_EQ(new_piece.GetPieceType(), PieceType::kEmpty);
-    new_piece = CellState(PieceType::kHorizontal);
-    if (col <= 0) {
-      new_piece.SetConnectedToLower();
-    }
-    if (col >= Size - 1) {
-      new_piece.SetConnectedToUpper();
-    }
-    return PropagateNewPiece(index, PieceType::kHorizontal);
-  }
-
-  bool SetVerticalPiece(int row, int col) {
-    const int index = Index(row, col);
-    auto& new_piece = data_[index];
-    DCHECK_EQ(new_piece.GetPieceType(), PieceType::kEmpty);
-    new_piece = CellState(PieceType::kVertical);
-    if (row <= 0) {
-      new_piece.SetConnectedToLower();
-    }
-    if (row >= Size - 1) {
-      new_piece.SetConnectedToUpper();
-    }
-    return PropagateNewPiece(index, PieceType::kVertical);
-  }
-
-  bool GameIsOver() { return winner_ != PieceType::kEmpty; }
-  PieceType Winner() { return winner_; }
-
-  CellState GetCell(int row, int col) const { return data_[row * Size + col]; }
-
-  CellState GetCell(int index) const { return data_[index]; }
-
   template <typename OStream>
   friend OStream& operator<<(OStream& os, const HexState<Size>& state) {
-    int count = 0;
-    for (const auto& cell : state.data()) {
-      if (count % Size == 0) {
-        os << '\n';
+    static const std::string letters = "abcdefghijklmnopqrstuvwxyz";
+    os << '\n' << " ";
+    for (int i = 0; i < Size; ++i) {
+      os << "║ " << letters.at(i) << " ";
+    }
+    os << "║";
+    os << '\n';
+
+    os << "═";
+    for (int j = 0; j < Size; ++j) {
+      os << "╩═╦═";
+    }
+
+    os << "╩═╗" << '\n';
+    std::string white_space = "";
+    for (int i = 0; i < Size - 1; ++i) {
+      std::string row_label = std::to_string(i + 1);
+      if (row_label.size() == 1) {
+        os << " " << row_label << " ║";
+      } else {
+        os << row_label << " ║";
       }
-      os << cell;
-      ++count;
+      for (int j = 0; j < Size; ++j) {
+        os << " " << state.GetCell(i, j).GetPieceType() << " ║";
+      }
+      os << '\n' << white_space << "═══";
+      for (int j = 0; j < Size; ++j) {
+        os << "╩═╦═";
+      }
+      os << "╩═╗";
+      white_space.append("  ");
+      os << '\n' << white_space;
+    }
+    {
+      int i = Size - 1;
+      std::string row_label = std::to_string(i + 1);
+      if (row_label.size() == 1) {
+        os << " " << row_label << " ║";
+      } else {
+        os << row_label << " ║";
+      }
+      for (int j = 0; j < Size; ++j) {
+        os << " " << state.GetCell(i, j).GetPieceType() << " ║";
+      }
+      os << '\n' << white_space << "═══";
+      for (int j = 0; j < Size; ++j) {
+        os << "╩═══";
+      }
+      os << "╝";
+      white_space.append("  ");
+      os << '\n' << white_space;
     }
     return os;
   }
@@ -133,8 +193,8 @@ class HexState {
   static int Index(int row, int col) {
     DCHECK_GE(row, 0);
     DCHECK_GE(col, 0);
-    DCHECK_LE(row, Size);
-    DCHECK_LE(col, Size);
+    DCHECK_LT(row, Size);
+    DCHECK_LT(col, Size);
     return row * Size + col;
   }
 
@@ -158,7 +218,7 @@ class HexState {
         maybe_neighbors.push_back(SafeIndex(row, col - 1));
         maybe_neighbors.push_back(SafeIndex(row, col + 1));
         maybe_neighbors.push_back(SafeIndex(row + 1, col - 1));
-        maybe_neighbors.push_back(SafeIndex(row + 1, col + 1));
+        maybe_neighbors.push_back(SafeIndex(row + 1, col));
         int count = 0;
         for (int maybe_neighbor : maybe_neighbors) {
           if (maybe_neighbor >= 0) {
@@ -173,10 +233,14 @@ class HexState {
 
  private:
   // Fake a max size static array.
+  // TODO See if it is faster to hold the number of neighbors around explicitly
+  // or to always assume 6 and ignore sentinels
   static std::array<std::pair<int, std::array<int, 6>>, kNumCells> neighbors_;
 
   // Cells are stored row-major order.
   std::array<CellState, kNumCells> data_{};
+
+  int empty_spaces_;
 
   PieceType winner_;
 };

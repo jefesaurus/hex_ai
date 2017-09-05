@@ -31,10 +31,30 @@ void VerticalPlayout() {
   CHECK_EQ(state.Winner(), PieceType::kVertical);
 }
 
+void TestPrint() {
+  {
+    HexState<5> state;
+    state.SetVerticalPiece(0, 0);
+    state.SetVerticalPiece(1, 1);
+    state.SetVerticalPiece(2, 2);
+    state.SetVerticalPiece(3, 3);
+    state.SetVerticalPiece(4, 4);
+    state.SetHorizontalPiece(0, 4);
+    state.SetHorizontalPiece(1, 3);
+    state.SetHorizontalPiece(3, 1);
+    state.SetHorizontalPiece(4, 0);
+    LOG(INFO) << state;
+  }
+  {
+    HexState<19> state;
+    LOG(INFO) << state;
+  }
+}
+
 int main(int argc, char** argv) {
   Init(&argc, &argv);
   HorizontalPlayout();
   VerticalPlayout();
-  LOG(INFO) << "Success";
+  TestPrint();
   return 0;
 }
