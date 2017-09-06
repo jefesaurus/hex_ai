@@ -4,9 +4,16 @@ package(
 
 cc_library(
     name = "easyloggingpp",
-    hdrs = ["src/easylogging++.h"],
     srcs = ["src/easylogging++.cc"],
-    defines = ["ELPP_THREAD_SAFE"], 
+    hdrs = ["src/easylogging++.h"],
+    defines = [
+        "ELPP_THREAD_SAFE",
+        "ELPP_NO_DEFAULT_LOG_FILE",
+        "ELPP_STL_LOGGING",
+        "ELPP_LOG_STD_ARRAY",
+        "ELPP_LOG_UNORDERED_MAP",
+        "ELPP_LOG_UNORDERED_SET",
+    ],
     includes = ["src"],
     linkopts = ["-pthread"],
 )
