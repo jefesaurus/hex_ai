@@ -72,8 +72,7 @@ void GenerateMovesetsAndPlay(int num_trials) {
   LOG(INFO) << "Playout rate: "
             << num_trials / ToSeconds<double>(timer.Elapsed())
             << " games per second";
-  LOG(INFO) << "Game results: "
-            << std::vector<int>(results.begin(), results.end());
+  LOG(INFO) << "Game results: " << results;
 }
 
 int main(int argc, char** argv) {
