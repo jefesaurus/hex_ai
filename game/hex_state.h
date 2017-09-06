@@ -27,28 +27,35 @@ class HexState {
   static constexpr int kSize = Size;
   static constexpr int kNumCells = Size * Size;
 
-  HexState() : winner_(PieceType::kEmpty), empty_spaces_(kNumCells) {}
+  HexState()
+      : actual_neighbors_{},
+        winner_(PieceType::kEmpty),
+        empty_spaces_(kNumCells) {}
 
   bool SetPiece(int index, PieceType type) {
     auto& new_piece = data_[index];
     DCHECK_EQ(new_piece.GetPieceType(), PieceType::kEmpty);
     new_piece = cell_templates_[index][as_underlying(type)];
+
+    AddNewPieceToNeighbors(index, type);
     --empty_spaces_;
     return PropagateNewPiece(index, type);
   }
 
-  bool SetPiece(int row, int col, PieceType type) {
-    return SetPiece(Index(row, col), type);
-  }
-
-  std::unordered_set<int> AvailableCells() const {
-    std::unordered_set<int> cells;
-    for (int i = 0; i < kNumCells; ++i) {
-      if (!data_[i].data()) {
-        cells.insert(i);
+  void AddNewPieceToNeighbors(int index, PieceType type) {
+    auto& new_neighbors = actual_neighbors_[index];
+    for (int neighbor_index : neighbors_[index]) {
+      auto& neighbor = data_[neighbor_index];
+      if (neighbor.data() & as_underlying(type)) {
+        auto& neighbor_neighbors = actual_neighbors_[neighbor_index];
+        neighbor_neighbors[neighbor_neighbors[6]++] = index;
+        new_neighbors[new_neighbors[6]++] = neighbor_index;
       }
     }
-    return cells;
+  }
+
+  bool SetPiece(int row, int col, PieceType type) {
+    return SetPiece(Index(row, col), type);
   }
 
   bool GameIsOver() { return winner_ != PieceType::kEmpty; }
@@ -59,16 +66,15 @@ class HexState {
 
   CellState GetCell(int index) const { return data_[index]; }
 
-  void PropagateConnections(const CellState& base_piece, int base_index,
-                            PieceType base_type) {
+  void PropagateConnections(const CellState& base_piece, int base_index) {
     int back = 0;
     {
-      for (int neighbor_index : neighbors_[base_index]) {
+      const auto& actual_neighbors = actual_neighbors_[base_index];
+      for (int i = 0; i < actual_neighbors[6]; ++i) {
+        const auto& neighbor_index = actual_neighbors[i];
         auto& neighbor = data_[neighbor_index];
-        if (neighbor.data() & as_underlying(base_type)) {
-          if (neighbor != base_piece) {
-            workspace_[back++] = neighbor_index;
-          }
+        if (neighbor != base_piece) {
+          workspace_[back++] = neighbor_index;
         }
       }
     }
@@ -76,12 +82,12 @@ class HexState {
     while (back > 0) {
       const int current = workspace_[--back];
       data_[current] = base_piece;
-      for (int neighbor_index : neighbors_[current]) {
-        auto& neighbor = data_[neighbor_index];
-        if (neighbor.data() & as_underlying(base_type)) {
-          if (neighbor != base_piece) {
-            workspace_[back++] = neighbor_index;
-          }
+      const auto& actual_neighbors = actual_neighbors_[current];
+      for (int i = 0; i < actual_neighbors[6]; ++i) {
+        const auto& neighbor_index = actual_neighbors[i];
+        auto& neighbor = data_[actual_neighbors[i]];
+        if (neighbor != base_piece) {
+          workspace_[back++] = neighbor_index;
         }
       }
     }
@@ -91,11 +97,10 @@ class HexState {
     auto& new_piece = data_[index];
 
     // Copy in connection data from neighbors.
-    for (int neighbor_index : neighbors_[index]) {
-      const auto& neighbor = data_[neighbor_index];
-      if (neighbor.data() & as_underlying(type)) {
-        new_piece.data() |= neighbor.data();
-      }
+    const auto& actual_neighbors = actual_neighbors_[index];
+    for (int i = 0; i < actual_neighbors[6]; ++i) {
+      auto& neighbor = data_[actual_neighbors[i]];
+      new_piece.data() |= neighbor.data();
     }
     if (new_piece.IsConnectedToLower() && new_piece.IsConnectedToUpper()) {
       // Early out if this was the final connection.
@@ -104,7 +109,7 @@ class HexState {
     }
 
     // Propagate connection data to neighbors.
-    PropagateConnections(new_piece, index, type);
+    PropagateConnections(new_piece, index);
     return false;
   }
 
@@ -235,6 +240,8 @@ class HexState {
   static std::array<std::array<CellState, 3>, kNumCells> cell_templates_;
 
   std::array<int, kNumCells> workspace_;
+
+  std::array<std::array<int, 7>, kNumCells> actual_neighbors_;
 
   // Cells are stored row-major order, with one more on the end as a sentinel.
   std::array<CellState, kNumCells + 1> data_{};
