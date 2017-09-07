@@ -15,9 +15,9 @@ bazel build -c opt game:hex_state_speed_test
 --profiler_output=speed_prof.prof pprof --callgrind
 ./bazel-bin/game/hex_state_speed_test speed_prof.prof >
 profiling_kcachegrind.txt
-
-
 */
+
+static constexpr int GameSize = 11;
 
 std::array<int, 3> RunPlayouts(
     const std::vector<std::array<PieceType, 2>>& shuffled_starts,
@@ -26,7 +26,7 @@ std::array<int, 3> RunPlayouts(
   for (int i = 0; i < shuffled_starts.size(); ++i) {
     const auto& moves_current = shuffled_moves[i];
     const auto& starts_current = shuffled_starts[i];
-    HexState<11> state;
+    HexState<GameSize> state;
     int move_number(0);
     while (!state.GameIsOver()) {
       state.SetPiece(moves_current[move_number],
@@ -40,7 +40,7 @@ std::array<int, 3> RunPlayouts(
 
 void GenerateMovesetsAndPlay(int num_trials) {
   std::vector<int> moves;
-  for (int i = 0; i < HexState<11>::kNumCells; ++i) {
+  for (int i = 0; i < HexState<GameSize>::kNumCells; ++i) {
     moves.push_back(i);
   }
   std::array<PieceType, 2> players = {PieceType::kVertical,
