@@ -3,6 +3,7 @@
 #include <sstream>
 #include <unordered_set>
 #include "base/logging.h"
+<<<<<<< HEAD
 #include "game/piece_type.h"
 
 constexpr int32_t ConstexprCeil(float num) {
@@ -10,6 +11,10 @@ constexpr int32_t ConstexprCeil(float num) {
              ? static_cast<int32_t>(num)
              : static_cast<int32_t>(num) + ((num > 0) ? 1 : 0);
 }
+=======
+#include "game/cell_state.h"
+#include "game/static_simd_bitset.h"
+>>>>>>> simd bitset doesn't seem to be any faster
 
 // Lower(row = 0, col = 0)
 //
@@ -65,13 +70,13 @@ class HexState {
     int merge_into = 0;
     for (; merge_into < num_horizontal_groups_; ++merge_into) {
       auto& group = horizontal_groups_[merge_into];
-      if ((neighbor_mask & group).any()) {
+      if (neighbor_mask.Intersects(group)) {
         // Merge group
-        group[index] = true;
+        group.Set(index);
         // Now it has been merged into a group and we know it has neighbors, so
         // we need to potentially merge other groups.
         for (int j = num_horizontal_groups_ - 1; j > merge_into; --j) {
-          if ((neighbor_mask & horizontal_groups_[j]).any()) {
+          if (neighbor_mask.Intersects(horizontal_groups_[j])) {
             // Merge into group j
             MergeHorizontalGroups(merge_into, j);
           }
@@ -80,9 +85,8 @@ class HexState {
       }
     }
 
-    // There was no neighboring group, create a group for it.
-    horizontal_groups_[num_horizontal_groups_].reset();
-    horizontal_groups_[num_horizontal_groups_++][index] = true;
+    horizontal_groups_[num_horizontal_groups_].Clear();
+    horizontal_groups_[num_horizontal_groups_++].Set(index);
   }
 
   void SetVerticalPiece(int index) {
@@ -92,14 +96,14 @@ class HexState {
     int merge_into = 0;
     for (; merge_into < num_vertical_groups_; ++merge_into) {
       auto& group = vertical_groups_[merge_into];
-      if ((neighbor_mask & group).any()) {
+      if (neighbor_mask.Intersects(group)) {
         // Merge group
-        group[index] = true;
+        group.Set(index);
 
         // Now it has been merged into a group and we know it has neighbors, so
         // we need to potentially merge other groups.
         for (int j = num_vertical_groups_ - 1; j > merge_into; --j) {
-          if ((neighbor_mask & vertical_groups_[j]).any()) {
+          if (neighbor_mask.Intersects(vertical_groups_[j])) {
             // Merge into group j
             MergeVerticalGroups(merge_into, j);
           }
@@ -109,35 +113,31 @@ class HexState {
     }
 
     // There was no neighboring group, create a group for it.
-    vertical_groups_[num_vertical_groups_].reset();
-    vertical_groups_[num_vertical_groups_++][index] = true;
+    vertical_groups_[num_vertical_groups_].Clear();
+    vertical_groups_[num_vertical_groups_++].Set(index);
   }
 
-  bool MergeVerticalGroups(int a, int b) {
+  void MergeVerticalGroups(int a, int b) {
     DCHECK_LT(a, b);
     if (a == 0 && b == 1) {
       winner_ = PieceType::kVertical;
-      return true;
     } else {
       vertical_groups_[a] |= vertical_groups_[b];
       // Erase b
       DCHECK_GT(num_vertical_groups_, 2);
       vertical_groups_[b] = vertical_groups_[--num_vertical_groups_];
-      return false;
     }
   }
 
-  bool MergeHorizontalGroups(int a, int b) {
+  void MergeHorizontalGroups(int a, int b) {
     DCHECK_LT(a, b);
     if (a == 0 && b == 1) {
       winner_ = PieceType::kHorizontal;
-      return true;
     } else {
       horizontal_groups_[a] |= horizontal_groups_[b];
       // Erase b
       DCHECK_GT(num_horizontal_groups_, 2);
       horizontal_groups_[b] = horizontal_groups_[--num_horizontal_groups_];
-      return false;
     }
   }
 
@@ -159,8 +159,6 @@ class HexState {
         return PieceType::kVertical;
       }
     }
-
-    return PieceType::kEmpty;
   }
 
   template <typename OStream>
@@ -263,41 +261,41 @@ class HexState {
     return out;
   }
 
-  static std::array<std::bitset<kNumCells + 4>, kNumCells> ComputeNeighborMasks(
+  static std::array<Bitset<kNumCells + 4>, kNumCells> ComputeNeighborMasks(
       const std::array<std::array<int, 6>, kNumCells>& neighbors) {
-    std::array<std::bitset<kNumCells + 4>, kNumCells> out;
+    std::array<Bitset<kNumCells + 4>, kNumCells> out;
     for (int i = 0; i < kNumCells; ++i) {
       for (const auto& neighbor : neighbors[i]) {
-        out[i][neighbor] = true;
+        out[i].Set(neighbor);
       }
     }
     return out;
   }
 
-  static std::array<std::bitset<kNumCells + 4>, kMaxNumGroups>
+  static std::array<Bitset<kNumCells + 4>, kMaxNumGroups>
   InitialHorizontalGroups() {
-    std::array<std::bitset<kNumCells + 4>, kMaxNumGroups> groups;
-    groups[0][kNumCells] = true;
-    groups[1][kNumCells + 1] = true;
+    std::array<Bitset<kNumCells + 4>, kMaxNumGroups> groups;
+    groups[0].Set(kNumCells);
+    groups[1].Set(kNumCells + 1);
     return groups;
   }
 
-  static std::array<std::bitset<kNumCells + 4>, kMaxNumGroups>
+  static std::array<Bitset<kNumCells + 4>, kMaxNumGroups>
   InitialVerticalGroups() {
-    std::array<std::bitset<kNumCells + 4>, kMaxNumGroups> groups;
-    groups[0][kNumCells + 2] = true;
-    groups[1][kNumCells + 3] = true;
+    std::array<Bitset<kNumCells + 4>, kMaxNumGroups> groups;
+    groups[0].Set(kNumCells + 2);
+    groups[1].Set(kNumCells + 3);
     return groups;
   }
 
  private:
   static std::array<std::array<int, 6>, kNumCells> neighbors_;
-  static std::array<std::bitset<kNumCells + 4>, kNumCells> neighbor_masks_;
+  static std::array<Bitset<kNumCells + 4>, kNumCells> neighbor_masks_;
 
   int num_horizontal_groups_;
-  std::array<std::bitset<kNumCells + 4>, kMaxNumGroups> horizontal_groups_;
+  std::array<Bitset<kNumCells + 4>, kMaxNumGroups> horizontal_groups_;
   int num_vertical_groups_;
-  std::array<std::bitset<kNumCells + 4>, kMaxNumGroups> vertical_groups_;
+  std::array<Bitset<kNumCells + 4>, kMaxNumGroups> vertical_groups_;
 
   PieceType winner_;
 
@@ -309,7 +307,6 @@ std::array<std::array<int, 6>, HexState<Size>::kNumCells>
     HexState<Size>::neighbors_ = HexState<Size>::ComputeNeighbors();
 
 template <int Size>
-std::array<std::bitset<HexState<Size>::kNumCells + 4>,
-           HexState<Size>::kNumCells>
+std::array<Bitset<HexState<Size>::kNumCells + 4>, HexState<Size>::kNumCells>
     HexState<Size>::neighbor_masks_ =
         HexState<Size>::ComputeNeighborMasks(HexState<Size>::neighbors_);

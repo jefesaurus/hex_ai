@@ -11,6 +11,7 @@ cc_library(
     hdrs = ["hex_state.h"],
     deps = [
         ":piece_type",
+        ":static_simd_bitset",
         "//base",
     ],
 )
@@ -30,9 +31,32 @@ cc_binary(
         "-Wl,-no-as-needed",
         "-lprofiler",
     ],
-    #copts = ["-pg"],
     deps = [
         ":hex_state",
+        "//base",
+    ],
+)
+
+cc_library(
+    name = "static_simd_bitset",
+    hdrs = ["static_simd_bitset.h"],
+    copts = [
+        "-msse",
+        "-msse2",
+        "-msse3",
+        "-mavx",
+        "-mavx2",
+    ],
+    deps = [
+        "//base",
+    ],
+)
+
+cc_binary(
+    name = "bitset_test",
+    srcs = ["bitset_test.cc"],
+    deps = [
+        ":static_simd_bitset",
         "//base",
     ],
 )
