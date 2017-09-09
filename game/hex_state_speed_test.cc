@@ -17,7 +17,7 @@ bazel build -c opt game:hex_state_speed_test
 profiling_kcachegrind.txt
 */
 
-static constexpr int GameSize = 11;
+static constexpr int GameSize = 19;
 
 std::array<int, 3> RunPlayouts(
     const std::vector<std::array<PieceType, 2>>& shuffled_starts,
