@@ -2,18 +2,8 @@
 #include <sstream>
 #include <unordered_set>
 #include "base/logging.h"
-<<<<<<< HEAD
 #include "game/piece_type.h"
-
-constexpr int32_t ConstexprCeil(float num) {
-  return (static_cast<float>(static_cast<int32_t>(num)) == num)
-             ? static_cast<int32_t>(num)
-             : static_cast<int32_t>(num) + ((num > 0) ? 1 : 0);
-}
-=======
-#include "game/cell_state.h"
 #include "game/static_simd_bitset.h"
->>>>>>> simd bitset doesn't seem to be any faster
 
 // Lower(row = 0, col = 0)
 //
@@ -260,10 +250,10 @@ class HexState {
     return out;
   }
 
-  static std::array<SimdBitset256<kNumCells + 4>, kNumCells>
+  static std::array<SimdBitset128<kNumCells + 4>, kNumCells>
   ComputeNeighborMasks(
       const std::array<std::array<int, 6>, kNumCells>& neighbors) {
-    std::array<SimdBitset256<kNumCells + 4>, kNumCells> out;
+    std::array<SimdBitset128<kNumCells + 4>, kNumCells> out;
     for (int i = 0; i < kNumCells; ++i) {
       for (const auto& neighbor : neighbors[i]) {
         out[i].Set(neighbor);
@@ -272,17 +262,17 @@ class HexState {
     return out;
   }
 
-  static std::array<SimdBitset256<kNumCells + 4>, kMaxNumGroups>
+  static std::array<SimdBitset128<kNumCells + 4>, kMaxNumGroups>
   InitialHorizontalGroups() {
-    std::array<SimdBitset256<kNumCells + 4>, kMaxNumGroups> groups;
+    std::array<SimdBitset128<kNumCells + 4>, kMaxNumGroups> groups;
     groups[0].Set(kNumCells);
     groups[1].Set(kNumCells + 1);
     return groups;
   }
 
-  static std::array<SimdBitset256<kNumCells + 4>, kMaxNumGroups>
+  static std::array<SimdBitset128<kNumCells + 4>, kMaxNumGroups>
   InitialVerticalGroups() {
-    std::array<SimdBitset256<kNumCells + 4>, kMaxNumGroups> groups;
+    std::array<SimdBitset128<kNumCells + 4>, kMaxNumGroups> groups;
     groups[0].Set(kNumCells + 2);
     groups[1].Set(kNumCells + 3);
     return groups;
@@ -290,12 +280,12 @@ class HexState {
 
  private:
   static std::array<std::array<int, 6>, kNumCells> neighbors_;
-  static std::array<SimdBitset256<kNumCells + 4>, kNumCells> neighbor_masks_;
+  static std::array<SimdBitset128<kNumCells + 4>, kNumCells> neighbor_masks_;
 
   int num_horizontal_groups_;
-  std::array<SimdBitset256<kNumCells + 4>, kMaxNumGroups> horizontal_groups_;
+  std::array<SimdBitset128<kNumCells + 4>, kMaxNumGroups> horizontal_groups_;
   int num_vertical_groups_;
-  std::array<SimdBitset256<kNumCells + 4>, kMaxNumGroups> vertical_groups_;
+  std::array<SimdBitset128<kNumCells + 4>, kMaxNumGroups> vertical_groups_;
 
   PieceType winner_;
 
@@ -307,7 +297,7 @@ std::array<std::array<int, 6>, HexState<Size>::kNumCells>
     HexState<Size>::neighbors_ = HexState<Size>::ComputeNeighbors();
 
 template <int Size>
-std::array<SimdBitset256<HexState<Size>::kNumCells + 4>,
+std::array<SimdBitset128<HexState<Size>::kNumCells + 4>,
            HexState<Size>::kNumCells>
     HexState<Size>::neighbor_masks_ =
         HexState<Size>::ComputeNeighborMasks(HexState<Size>::neighbors_);
