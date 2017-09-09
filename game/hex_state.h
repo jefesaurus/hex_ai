@@ -3,7 +3,7 @@
 #include <sstream>
 #include <unordered_set>
 #include "base/logging.h"
-#include "game/cell_state.h"
+#include "game/piece_type.h"
 
 constexpr int32_t ConstexprCeil(float num) {
   return (static_cast<float>(static_cast<int32_t>(num)) == num)
@@ -41,18 +41,11 @@ class HexState {
         horizontal_groups_(InitialHorizontalGroups()),
         num_vertical_groups_(2),
         vertical_groups_(InitialVerticalGroups()),
-        data_(InitializeData()),
         winner_(PieceType::kEmpty),
         empty_spaces_(kNumCells) {}
 
   void SetPiece(int row, int col, PieceType type) {
-    if (type == PieceType::kHorizontal) {
-      SetHorizontalPiece(Index(row, col));
-    } else {
-      DCHECK_EQ(type, PieceType::kVertical);
-      SetVerticalPiece(Index(row, col));
-    }
-    --empty_spaces_;
+    SetPiece(Index(row, col), type);
   }
 
   void SetPiece(int index, PieceType type) {
@@ -66,10 +59,6 @@ class HexState {
   }
 
   void SetHorizontalPiece(int index) {
-    auto& new_piece = data_[index];
-    DCHECK_EQ(new_piece.GetPieceType(), PieceType::kEmpty);
-    new_piece = CellState(PieceType::kHorizontal);
-
     const auto& neighbor_mask = neighbor_masks_[index];
 
     // Assign to lowest neighboring group
@@ -79,33 +68,24 @@ class HexState {
       if ((neighbor_mask & group).any()) {
         // Merge group
         group[index] = true;
-        break;
+        // Now it has been merged into a group and we know it has neighbors, so
+        // we need to potentially merge other groups.
+        for (int j = num_horizontal_groups_ - 1; j > merge_into; --j) {
+          if ((neighbor_mask & horizontal_groups_[j]).any()) {
+            // Merge into group j
+            MergeHorizontalGroups(merge_into, j);
+          }
+        }
+        return;
       }
     }
 
     // There was no neighboring group, create a group for it.
-    if (merge_into == num_horizontal_groups_) {
-      horizontal_groups_[num_horizontal_groups_].reset();
-      horizontal_groups_[num_horizontal_groups_++][index] = true;
-      return;
-    }
-
-    // Now it has been merged into a group and we know it has neighbors, so we
-    // need to potentially merge other groups.
-    for (int j = num_horizontal_groups_ - 1; j > merge_into; --j) {
-      auto& group = horizontal_groups_[j];
-      if ((neighbor_mask & group).any()) {
-        // Merge into group j
-        MergeHorizontalGroups(merge_into, j);
-      }
-    }
+    horizontal_groups_[num_horizontal_groups_].reset();
+    horizontal_groups_[num_horizontal_groups_++][index] = true;
   }
 
   void SetVerticalPiece(int index) {
-    auto& new_piece = data_[index];
-    DCHECK_EQ(new_piece.GetPieceType(), PieceType::kEmpty);
-    new_piece = CellState(PieceType::kVertical);
-
     const auto& neighbor_mask = neighbor_masks_[index];
 
     // Assign to lowest neighboring group
@@ -115,55 +95,49 @@ class HexState {
       if ((neighbor_mask & group).any()) {
         // Merge group
         group[index] = true;
-        break;
+
+        // Now it has been merged into a group and we know it has neighbors, so
+        // we need to potentially merge other groups.
+        for (int j = num_vertical_groups_ - 1; j > merge_into; --j) {
+          if ((neighbor_mask & vertical_groups_[j]).any()) {
+            // Merge into group j
+            MergeVerticalGroups(merge_into, j);
+          }
+        }
+        return;
       }
     }
 
     // There was no neighboring group, create a group for it.
-    if (merge_into == num_vertical_groups_) {
-      vertical_groups_[num_vertical_groups_].reset();
-      vertical_groups_[num_vertical_groups_++][index] = true;
-      return;
-    }
-
-    // Now it has been merged into a group and we know it has neighbors, so we
-    // need to potentially merge other groups.
-    for (int j = num_vertical_groups_ - 1; j > merge_into; --j) {
-      auto& group = vertical_groups_[j];
-      if ((neighbor_mask & group).any()) {
-        // Merge into group j
-        MergeVerticalGroups(merge_into, j);
-      }
-    }
+    vertical_groups_[num_vertical_groups_].reset();
+    vertical_groups_[num_vertical_groups_++][index] = true;
   }
 
-  void MergeVerticalGroups(int a, int b) {
+  bool MergeVerticalGroups(int a, int b) {
     DCHECK_LT(a, b);
     if (a == 0 && b == 1) {
       winner_ = PieceType::kVertical;
+      return true;
     } else {
       vertical_groups_[a] |= vertical_groups_[b];
       // Erase b
       DCHECK_GT(num_vertical_groups_, 2);
-      --num_vertical_groups_;
-      if (b < num_vertical_groups_) {
-        vertical_groups_[b] = vertical_groups_[num_vertical_groups_];
-      }
+      vertical_groups_[b] = vertical_groups_[--num_vertical_groups_];
+      return false;
     }
   }
 
-  void MergeHorizontalGroups(int a, int b) {
+  bool MergeHorizontalGroups(int a, int b) {
     DCHECK_LT(a, b);
     if (a == 0 && b == 1) {
       winner_ = PieceType::kHorizontal;
+      return true;
     } else {
       horizontal_groups_[a] |= horizontal_groups_[b];
       // Erase b
       DCHECK_GT(num_horizontal_groups_, 2);
-      --num_horizontal_groups_;
-      if (b < num_horizontal_groups_) {
-        horizontal_groups_[b] = horizontal_groups_[num_horizontal_groups_];
-      }
+      horizontal_groups_[b] = horizontal_groups_[--num_horizontal_groups_];
+      return false;
     }
   }
 
@@ -171,9 +145,23 @@ class HexState {
 
   PieceType Winner() { return winner_; }
 
-  CellState GetCell(int row, int col) const { return data_[row * Size + col]; }
+  PieceType GetCell(int row, int col) const { return GetCell(Index(row, col)); }
 
-  CellState GetCell(int index) const { return data_[index]; }
+  PieceType GetCell(int index) const {
+    for (const auto& group : horizontal_groups_) {
+      if (group[index]) {
+        return PieceType::kHorizontal;
+      }
+    }
+
+    for (const auto& group : vertical_groups_) {
+      if (group[index]) {
+        return PieceType::kVertical;
+      }
+    }
+
+    return PieceType::kEmpty;
+  }
 
   template <typename OStream>
   friend OStream& operator<<(OStream& os, const HexState<Size>& state) {
@@ -200,7 +188,7 @@ class HexState {
         os << row_label << " ║";
       }
       for (int j = 0; j < Size; ++j) {
-        os << " " << state.GetCell(i, j).GetPieceType() << " ║";
+        os << " " << state.GetCell(i, j) << " ║";
       }
       os << '\n' << white_space << "═══";
       for (int j = 0; j < Size; ++j) {
@@ -219,7 +207,7 @@ class HexState {
         os << row_label << " ║";
       }
       for (int j = 0; j < Size; ++j) {
-        os << " " << state.GetCell(i, j).GetPieceType() << " ║";
+        os << " " << state.GetCell(i, j) << " ║";
       }
       os << '\n' << white_space << "═══";
       for (int j = 0; j < Size; ++j) {
@@ -231,8 +219,6 @@ class HexState {
     }
     return os;
   }
-
-  const std::array<CellState, kNumCells + 1>& data() const { return data_; }
 
   static int Index(int row, int col) {
     DCHECK_GE(row, 0);
@@ -304,15 +290,6 @@ class HexState {
     return groups;
   }
 
-  static std::array<CellState, kNumCells + 4> InitializeData() {
-    std::array<CellState, kNumCells + 4> data{};
-    data[kNumCells] = CellState(PieceType::kHorizontal);
-    data[kNumCells + 1] = CellState(PieceType::kHorizontal);
-    data[kNumCells + 2] = CellState(PieceType::kVertical);
-    data[kNumCells + 3] = CellState(PieceType::kVertical);
-    return data;
-  }
-
  private:
   static std::array<std::array<int, 6>, kNumCells> neighbors_;
   static std::array<std::bitset<kNumCells + 4>, kNumCells> neighbor_masks_;
@@ -321,9 +298,6 @@ class HexState {
   std::array<std::bitset<kNumCells + 4>, kMaxNumGroups> horizontal_groups_;
   int num_vertical_groups_;
   std::array<std::bitset<kNumCells + 4>, kMaxNumGroups> vertical_groups_;
-
-  // Cells are stored row-major order, with a sentinel for each side.
-  std::array<CellState, kNumCells + 4> data_;
 
   PieceType winner_;
 
