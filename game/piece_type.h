@@ -13,10 +13,15 @@
 
 // Horizontal pieces are trying to connect horizontally, Vertical pieces are
 // trying to connect vertically
-enum struct PieceType : uint8_t { kEmpty = 0, kHorizontal = 1, kVertical = 2 };
+enum struct PieceType : uint8_t {
+  kEmpty = 0,
+  kHorizontal = 1,
+  kVertical = 2,
+  kSize = 3
+};
 
 template <typename Enumeration>
-auto as_underlying(Enumeration const value) ->
+constexpr auto as_underlying(Enumeration const value) ->
     typename std::underlying_type<Enumeration>::type {
   return static_cast<typename std::underlying_type<Enumeration>::type>(value);
 }

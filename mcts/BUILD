@@ -7,20 +7,10 @@ cc_library(
 )
 
 cc_library(
-    name = "zobrist",
-    hdrs = ["zobrist.h"],
-    deps = [
-        ":piece_type",
-        "//base",
-    ],
-)
-
-cc_library(
     name = "hex_state",
     hdrs = ["hex_state.h"],
     deps = [
         ":piece_type",
-        ":zobrist",
         "//base",
     ],
 )

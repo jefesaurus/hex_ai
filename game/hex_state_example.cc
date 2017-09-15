@@ -16,15 +16,21 @@ void RandomPlayout1() {
 
 void HorizontalPlayout1() {
   HexState<5> state;
+  LOG(INFO) << state.Hash();
   state.SetPiece(0, 0, PieceType::kHorizontal);
+  LOG(INFO) << state.Hash();
   CHECK(!state.GameIsOver());
   state.SetPiece(0, 1, PieceType::kHorizontal);
+  LOG(INFO) << state.Hash();
   CHECK(!state.GameIsOver());
   state.SetPiece(0, 2, PieceType::kHorizontal);
+  LOG(INFO) << state.Hash();
   CHECK(!state.GameIsOver());
   state.SetPiece(0, 3, PieceType::kHorizontal);
+  LOG(INFO) << state.Hash();
   CHECK(!state.GameIsOver());
   state.SetPiece(0, 4, PieceType::kHorizontal);
+  LOG(INFO) << state.Hash();
   CHECK(state.GameIsOver());  // << state;
   CHECK_EQ(state.Winner(), PieceType::kHorizontal);
 }

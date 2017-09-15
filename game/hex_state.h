@@ -4,6 +4,7 @@
 #include <unordered_set>
 #include "base/logging.h"
 #include "game/piece_type.h"
+#include "game/zobrist.h"
 
 constexpr int32_t ConstexprCeil(float num) {
   return (static_cast<float>(static_cast<int32_t>(num)) == num)
@@ -42,13 +43,31 @@ class HexState {
         num_vertical_groups_(2),
         vertical_groups_(InitialVerticalGroups()),
         winner_(PieceType::kEmpty),
-        empty_spaces_(kNumCells) {}
+        empty_spaces_(kNumCells),
+        hash_(0) {}
+
+  // Default copy constructor
+  HexState(const HexState&) = default;
+
+  // Default copy assign
+  HexState& operator=(const HexState&) = default;
+
+  // Default move constructor
+  HexState(HexState&&) = default;
+
+  // Default move assign
+  HexState& operator=(HexState&&) = default;
+
+  uint32_t Hash() { return hash_; }
 
   void SetPiece(int row, int col, PieceType type) {
     SetPiece(Index(row, col), type);
   }
 
   void SetPiece(int index, PieceType type) {
+    DCHECK_EQ(GetCell(index), PieceType::kEmpty);
+    DCHECK(!GameIsOver());
+    DCHECK(type == PieceType::kHorizontal || type == PieceType::kVertical);
     if (type == PieceType::kHorizontal) {
       SetHorizontalPiece(index);
     } else {
@@ -56,6 +75,7 @@ class HexState {
       SetVerticalPiece(index);
     }
     --empty_spaces_;
+    hasher_.FlipPiece(index, type, &hash_);
   }
 
   void SetHorizontalPiece(int index) {
@@ -293,6 +313,7 @@ class HexState {
  private:
   static std::array<std::array<int, 6>, kNumCells> neighbors_;
   static std::array<std::bitset<kNumCells + 4>, kNumCells> neighbor_masks_;
+  static ZobristHasher<kNumCells, uint32_t> hasher_;
 
   int num_horizontal_groups_;
   std::array<std::bitset<kNumCells + 4>, kMaxNumGroups> horizontal_groups_;
@@ -302,6 +323,7 @@ class HexState {
   PieceType winner_;
 
   int empty_spaces_;
+  uint32_t hash_;
 };
 
 template <int Size>
