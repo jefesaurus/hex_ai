@@ -5,6 +5,17 @@
 #include "base/logging.h"
 #include "game/piece_type.h"
 
+/*
+From https://chessprogramming.wikispaces.com/Zobrist+Hashing
+
+"Hash collisions demonstrate the birthday "paradox", which is to say the chance
+of collisions approaches certainty at around the square root of the number of
+possible keys, contrary to some people's expectations. You can expect to
+encounter a collision in a 32 bit hash when you have evaluated sqrt(2 ^ 32) == 2
+^ 16 or around 65 thousand positions. With a 64 bit hash, you can expect a
+collision after about 2 ^ 32 or 4 billion positions."
+*/
+
 template <int NumCells, typename HashType>
 class ZobristHasher {
  public:

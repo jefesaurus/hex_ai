@@ -58,7 +58,7 @@ class HexState {
   // Default move assign
   HexState& operator=(HexState&&) = default;
 
-  uint32_t Hash() { return hash_; }
+  uint64_t Hash() { return hash_; }
 
   void SetPiece(int row, int col, PieceType type) {
     SetPiece(Index(row, col), type);
@@ -313,7 +313,7 @@ class HexState {
  private:
   static std::array<std::array<int, 6>, kNumCells> neighbors_;
   static std::array<std::bitset<kNumCells + 4>, kNumCells> neighbor_masks_;
-  static ZobristHasher<kNumCells, uint32_t> hasher_;
+  static ZobristHasher<kNumCells, uint64_t> hasher_;
 
   int num_horizontal_groups_;
   std::array<std::bitset<kNumCells + 4>, kMaxNumGroups> horizontal_groups_;
@@ -323,7 +323,7 @@ class HexState {
   PieceType winner_;
 
   int empty_spaces_;
-  uint32_t hash_;
+  uint64_t hash_;
 };
 
 template <int Size>
