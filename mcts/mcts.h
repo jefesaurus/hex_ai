@@ -117,9 +117,9 @@ class HexTree {
       // We've already taken this branch before.
       if (sim->available_moves[i]) {
         const auto& node = *children[i];
-        double score =
-            static_cast<double>(node.num_wins) / node.num_visits +
-            1.4 * std::sqrt(std::log(total_visits) / node.num_visits);
+        double score = static_cast<double>(node.num_visits - node.num_wins) /
+                           node.num_visits +
+                       1.4 * std::sqrt(total_visits / node.num_visits);
         if (score > best_score) {
           best_move = i;
           best_score = score;
