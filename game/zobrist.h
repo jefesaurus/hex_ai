@@ -51,6 +51,7 @@ class ZobristHasher {
   }
 
   static std::array<HashType, NumCells * kNumPieceTypes> InitTable() {
+    std::srand(0);
     std::array<HashType, NumCells * kNumPieceTypes> output;
     for (auto& elt : output) {
       elt = RandomBitstring();

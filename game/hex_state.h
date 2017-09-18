@@ -352,3 +352,7 @@ std::array<std::bitset<HexState<Size>::kNumCells + 4>,
            HexState<Size>::kNumCells>
     HexState<Size>::neighbor_masks_ =
         HexState<Size>::ComputeNeighborMasks(HexState<Size>::neighbors_);
+
+template <int Size>
+ZobristHasher<HexState<Size>::kNumCells, uint64_t> HexState<Size>::hasher_ =
+    ZobristHasher<HexState<Size>::kNumCells, uint64_t>();
