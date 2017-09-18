@@ -44,3 +44,9 @@ inline OStream& operator<<(OStream& os, const PieceType& val) {
   }
   return os;
 }
+
+static constexpr std::array<PieceType, 3> flip_index = {
+    PieceType::kEmpty, PieceType::kVertical, PieceType::kHorizontal};
+constexpr PieceType FlipPlayer(const PieceType& piece_type) {
+  return flip_index[as_underlying(piece_type)];
+}
