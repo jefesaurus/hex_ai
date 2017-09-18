@@ -15,3 +15,15 @@ cc_binary(
         ":mcts",
     ],
 )
+
+cc_binary(
+    name = "tree_speed_test",
+    srcs = ["tree_speed_test.cc"],
+    linkopts = [
+        "-Wl,-no-as-needed",
+        "-lprofiler",
+    ],
+    deps = [
+        ":mcts",
+    ],
+)
