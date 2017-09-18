@@ -1,26 +1,49 @@
 #pragma once
+#include <random>
 #include "base/wall_timer.h"
 #include "game/hex_state.h"
 
 template <int Size>
 class HexTree {
  private:
+  struct TreeNode {
+    std::array<TreeNode*, Size* Size> children = {};
+    int num_wins = 0;
+    int num_visits = 0;
+  };
+
   // The state required for one simulated play.
   struct SimulationState {
-    PieceType to_move;
     HexState<Size> state;
     std::array<bool, Size * Size> available_moves;
 
     // If expand is true, that means we're still looking down the part of the
-    // tree we've seen befor
+    // tree we've seen before
     bool expand;
     int breadcrumb_size;
     std::array<TreeNode*, Size * Size> breadcrumb;
   };
 
  public:
-  HexTree(HexState<Size> current_state) {}
+  HexTree(HexState<Size> current_state)
+      : root_sim_(InitializeRootSim(current_state, &visited_)),
+        root_node_(root_sim_.breadcrumb.front()) {}
 
+  static SimulationState InitializeRootSim(
+      HexState<Size> root_state,
+      std::array<std::unordered_map<uint64_t, TreeNode>, 3>* visited) {
+    SimulationState root_sim;
+    root_sim.available_moves = root_state.AvailableMoves();
+    root_sim.expand = true;
+    root_sim.breadcrumb_size = 1;
+    root_sim.breadcrumb.fill(nullptr);
+    root_sim.breadcrumb.front() =
+        &((*visited)[as_underlying(root_state.ToMove())][root_state.Hash()]);
+    root_sim.state = std::move(root_state);
+    return root_sim;
+  }
+
+  /*
   void AddMoveToSim(int move, SimulationState* sim) {
     sim->available_moves[move] = false;
     sim->state.SetPiece(move, sim->to_move);
@@ -68,66 +91,61 @@ class HexTree {
       }
     }
   }
+  */
 
-  void StepRandom(SimulationState* sim) {
+  void FinishRandom(SimulationState* sim) {
     DCHECK(!sim->state.GameIsOver());
     DCHECK(!sim->expand);
-    std::uniform_int_distribution<> dis(1, sim->state.EmptySpaces());
-    int available_move_index = dis(gen);
-    int move = 0;
-    for (; move < sim->available_moves.size() && available_move_index > 0;
-         ++i) {
-      if (sim->available_moves[move]) {
-        --available_move_index;
+    CHECK_GT(sim->state.EmptySpaces(), 0);
+    std::vector<int> shuffled_moves;
+    shuffled_moves.reserve(sim->state.EmptySpaces());
+    for (int i = 0; i < sim->available_moves.size(); ++i) {
+      if (sim->available_moves[i]) {
+        shuffled_moves.push_back(i);
+      }
+    }
+    std::shuffle(shuffled_moves.begin(), shuffled_moves.end(), gen_);
+    for (const auto& move : shuffled_moves) {
+      sim->state.SetPiece(move);
+      if (sim->state.GameIsOver()) {
+        break;
       }
     }
   }
 
-  void StepSimulation(SimulationState* sim) {
-    if (sim->expand) {
-      StepTreeExpansion(sim);
-    } else {
-      StepRandom(sim);
-    }
-  }
+  void StepSimulation(SimulationState* sim) { FinishRandom(sim); }
 
   void RunSimulation() {
-    SimulationState sim;
+    SimulationState sim = root_sim_;
+    sim.expand = false;
+    CHECK_GT(sim.state.EmptySpaces(), 0);
     while (!sim.state.GameIsOver()) {
       StepSimulation(&sim);
     }
 
     // If the root won, winner_mod_2 = false
-    bool root_wins = root.to_move == sim.state.Winner();
+    bool root_wins = root_sim_.state.ToMove() == sim.state.Winner();
 
     // Backprop.
-    const auto& breadcrumb = sim.breadcrumb;
+    auto& breadcrumb = sim.breadcrumb;
     for (int i = 0; i < sim.breadcrumb_size; ++i) {
       ++breadcrumb[i]->num_visits;
       if (i % 2 != root_wins) {
         ++breadcrumb[i]->num_wins;
       }
     }
+    LOG_EVERY_N(10000, INFO)
+        << "Win probability: "
+        << static_cast<double>(root_node_->num_wins) / root_node_->num_visits;
   }
 
+  static std::mt19937 gen_;
+
   // The base state for this game tree.
-  SimulationState root;
-  HexState<Size> root_state_;
-  PieceType root_to_move_;
-
-  // The corresponding tree node.
-  TreeNode* root_node_;
-
-  std::array<bool, Size * Size> root_available_moves_;
-
-  // Node storage.
   std::array<std::unordered_map<uint64_t, TreeNode>, 3> visited_;
-
-  std::mt19937 gen;
+  SimulationState root_sim_;
+  const TreeNode* root_node_;
 };
 
-struct TreeNode {
-  std::array<TreeNode*, Size * Size> children;
-  int num_wins;
-  int num_visits;
-};
+template <int Size>
+std::mt19937 HexTree<Size>::gen_ = std::mt19937(std::random_device()());
