@@ -52,10 +52,25 @@ class HexState {
   HexState(HexState&&) = default;
   HexState& operator=(HexState&&) = default;
 
-  uint64_t Hash() { return hash_; }
+  uint64_t Hash() const { return hash_; }
   int EmptySpaces() { return empty_spaces_; }
   static const ZobristHasher<kNumCells, uint64_t>& Hasher() { return hasher_; };
-  PieceType ToMove() { return to_move_; }
+  PieceType ToMove() const { return to_move_; }
+
+  std::array<bool, Size * Size> AvailableMoves() const {
+    std::bitset<kNumCells + 4> not_available = horizontal_groups_[0];
+    for (int i = 1; i < horizontal_groups_.size(); ++i) {
+      not_available |= horizontal_groups_[i];
+    }
+    for (const auto& group : vertical_groups_) {
+      not_available |= group;
+    }
+    std::array<bool, Size * Size> out;
+    for (int i = 0; i < out.size(); ++i) {
+      out[i] = !not_available[i];
+    }
+    return out;
+  }
 
   void SetPiece(int row, int col) { SetPiece(Index(row, col)); }
 
