@@ -45,13 +45,13 @@ class HexTree {
   }
 
   std::pair<int, double> GetBestMove() {
-    double best_prob = 1.0;
+    double best_prob = -1;
     double best_move = -1;
     for (int i = 0; i < root_sim_.available_moves.size(); ++i) {
       if (root_sim_.available_moves[i] && root_node_->children[i]) {
         double score = static_cast<double>(root_node_->children[i]->num_wins) /
                        root_node_->children[i]->num_visits;
-        if (score < best_prob) {
+        if (score > best_prob) {
           best_move = i;
           best_prob = score;
         }
@@ -110,15 +110,14 @@ class HexTree {
     }
 
     // Now we have log total.
-    int best_move = 0;
-    double best_score = 0;
+    int best_move = -1;
+    double best_score = -1;
     total_visits = std::log(total_visits);
     for (int i = 0; i < sim->available_moves.size(); ++i) {
       // We've already taken this branch before.
       if (sim->available_moves[i]) {
         const auto& node = *children[i];
-        double score = static_cast<double>(node.num_visits - node.num_wins) /
-                           node.num_visits +
+        double score = static_cast<double>(node.num_wins) / node.num_visits +
                        1.4 * std::sqrt(total_visits / node.num_visits);
         if (score > best_score) {
           best_move = i;
@@ -126,6 +125,7 @@ class HexTree {
         }
       }
     }
+    DCHECK_GE(best_move, 0);
 
     // And apply the selected move.
     sim->state.SetPiece(best_move);
@@ -169,7 +169,7 @@ class HexTree {
     }
 
     // If the root won, winner_mod_2 = false
-    bool root_wins = root_sim_.state.ToMove() == sim.state.Winner();
+    bool root_wins = root_sim_.state.ToMove() != sim.state.Winner();
 
     // Backprop.
     auto& breadcrumb = sim.breadcrumb;
