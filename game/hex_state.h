@@ -38,46 +38,48 @@ class HexState {
       ConstexprCeil(kSize / 2.0) * ConstexprCeil(kSize / 2.0);
 
   HexState()
-      : num_horizontal_groups_(2),
+      : to_move_(PieceType::kHorizontal),
+        num_horizontal_groups_(2),
         horizontal_groups_(InitialHorizontalGroups()),
         num_vertical_groups_(2),
         vertical_groups_(InitialVerticalGroups()),
         winner_(PieceType::kEmpty),
         empty_spaces_(kNumCells),
         hash_(0) {}
-
-  // Default copy constructor
+  // Default copy, move, assign
   HexState(const HexState&) = default;
-
-  // Default copy assign
   HexState& operator=(const HexState&) = default;
-
-  // Default move constructor
   HexState(HexState&&) = default;
-
-  // Default move assign
   HexState& operator=(HexState&&) = default;
 
   uint64_t Hash() { return hash_; }
+  int EmptySpaces() { return empty_spaces_; }
+  static const ZobristHasher<kNumCells, uint64_t>& Hasher() { return hasher_; };
+  PieceType ToMove() { return to_move_; }
 
-  void SetPiece(int row, int col, PieceType type) {
-    SetPiece(Index(row, col), type);
-  }
+  void SetPiece(int row, int col) { SetPiece(Index(row, col)); }
 
-  void SetPiece(int index, PieceType type) {
+  void SetPiece(int index) {
     DCHECK_EQ(GetCell(index), PieceType::kEmpty);
     DCHECK(!GameIsOver());
-    DCHECK(type == PieceType::kHorizontal || type == PieceType::kVertical);
-    if (type == PieceType::kHorizontal) {
+    DCHECK(to_move_ == PieceType::kHorizontal ||
+           to_move_ == PieceType::kVertical);
+    if (to_move_ == PieceType::kHorizontal) {
       SetHorizontalPiece(index);
     } else {
-      DCHECK_EQ(type, PieceType::kVertical);
+      DCHECK_EQ(to_move_, PieceType::kVertical);
       SetVerticalPiece(index);
     }
     --empty_spaces_;
-    hasher_.FlipPiece(index, type, &hash_);
+    hasher_.FlipPiece(index, to_move_, &hash_);
+    to_move_ = FlipPlayer(to_move_);
   }
 
+  bool GameIsOver() { return winner_ != PieceType::kEmpty; }
+
+  PieceType Winner() { return winner_; }
+
+ private:
   void SetHorizontalPiece(int index) {
     const auto& neighbor_mask = neighbor_masks_[index];
 
@@ -161,10 +163,6 @@ class HexState {
     }
   }
 
-  bool GameIsOver() { return winner_ != PieceType::kEmpty; }
-
-  PieceType Winner() { return winner_; }
-
   PieceType GetCell(int row, int col) const { return GetCell(Index(row, col)); }
 
   PieceType GetCell(int index) const {
@@ -183,6 +181,7 @@ class HexState {
     return PieceType::kEmpty;
   }
 
+ public:
   template <typename OStream>
   friend OStream& operator<<(OStream& os, const HexState<Size>& state) {
     static const std::string letters = "abcdefghijklmnopqrstuvwxyz";
@@ -240,6 +239,7 @@ class HexState {
     return os;
   }
 
+ private:
   static int Index(int row, int col) {
     DCHECK_GE(row, 0);
     DCHECK_GE(col, 0);
@@ -314,6 +314,8 @@ class HexState {
   static std::array<std::array<int, 6>, kNumCells> neighbors_;
   static std::array<std::bitset<kNumCells + 4>, kNumCells> neighbor_masks_;
   static ZobristHasher<kNumCells, uint64_t> hasher_;
+
+  PieceType to_move_;
 
   int num_horizontal_groups_;
   std::array<std::bitset<kNumCells + 4>, kMaxNumGroups> horizontal_groups_;

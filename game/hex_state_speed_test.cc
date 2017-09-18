@@ -20,17 +20,14 @@ profiling_kcachegrind.txt
 static constexpr int GameSize = 11;
 
 std::array<int, 3> RunPlayouts(
-    const std::vector<std::array<PieceType, 2>>& shuffled_starts,
     const std::vector<std::vector<int>>& shuffled_moves) {
   std::array<int, 3> wins = {0, 0, 0};
-  for (int i = 0; i < shuffled_starts.size(); ++i) {
+  for (int i = 0; i < shuffled_moves.size(); ++i) {
     const auto& moves_current = shuffled_moves[i];
-    const auto& starts_current = shuffled_starts[i];
     HexState<GameSize> state;
     int move_number(0);
     while (!state.GameIsOver()) {
-      state.SetPiece(moves_current[move_number],
-                     starts_current[move_number % 2]);
+      state.SetPiece(moves_current[move_number]);
       move_number++;
     }
     ++wins[as_underlying(state.Winner())];
@@ -43,27 +40,19 @@ void GenerateMovesetsAndPlay(int num_trials) {
   for (int i = 0; i < HexState<GameSize>::kNumCells; ++i) {
     moves.push_back(i);
   }
-  std::array<PieceType, 2> players = {PieceType::kVertical,
-                                      PieceType::kHorizontal};
-  std::vector<std::array<PieceType, 2>> shuffled_starts(num_trials);
   std::vector<std::vector<int>> shuffled_moves(num_trials);
   for (int i = 0; i < num_trials; ++i) {
     auto& shuffled_moves_current = shuffled_moves[i];
     shuffled_moves_current = moves;
     std::random_shuffle(shuffled_moves_current.begin(),
                         shuffled_moves_current.end());
-
-    auto& shuffled_starts_current = shuffled_starts[i];
-    shuffled_starts_current = players;
-    std::random_shuffle(shuffled_starts_current.begin(),
-                        shuffled_starts_current.end());
   }
   WallTimer timer;
   timer.Start();
   if (!FLAGS_profile_path.empty()) {
     ProfilerStart(FLAGS_profile_path.c_str());
   }
-  const auto results = RunPlayouts(shuffled_starts, shuffled_moves);
+  const auto results = RunPlayouts(shuffled_moves);
   if (!FLAGS_profile_path.empty()) {
     ProfilerStop();
   }
