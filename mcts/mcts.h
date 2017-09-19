@@ -136,20 +136,27 @@ class HexTree {
   void FinishRandom(SimulationState* sim) {
     DCHECK(!sim->state.GameIsOver());
     DCHECK(!sim->expand);
-    CHECK_GT(sim->state.EmptySpaces(), 0);
-    std::vector<int> shuffled_moves;
-    shuffled_moves.reserve(sim->state.EmptySpaces());
+    DCHECK_GT(sim->state.EmptySpaces(), 0);
+    std::array<int, Size * Size> moves;
+    int n_moves = 0;
     for (int i = 0; i < sim->available_moves.size(); ++i) {
       if (sim->available_moves[i]) {
-        shuffled_moves.push_back(i);
+        moves[n_moves++] = i;
       }
     }
-    std::shuffle(shuffled_moves.begin(), shuffled_moves.end(), gen_);
-    for (const auto& move : shuffled_moves) {
-      sim->state.SetPiece(move);
+
+    // Fisher Yates shuffle
+    for (int i = n_moves - 1; i > 0; --i) {
+      // With modulo bias, call the cops
+      int j = gen_() % i;
+      sim->state.SetPiece(moves[j]);
       if (sim->state.GameIsOver()) {
         break;
       }
+      moves[j] = moves[i];
+    }
+    if (!sim->state.GameIsOver()) {
+      sim->state.SetPiece(moves[0]);
     }
   }
 
@@ -163,7 +170,7 @@ class HexTree {
 
   void RunSimulation() {
     SimulationState sim = root_sim_;
-    CHECK_GT(sim.state.EmptySpaces(), 0);
+    DCHECK_GT(sim.state.EmptySpaces(), 0);
     while (!sim.state.GameIsOver()) {
       StepSimulation(&sim);
     }
@@ -183,8 +190,7 @@ class HexTree {
 
   static std::mt19937 gen_;
 
-  // The node cache. This is indexed in the array by
-  // as_underlying(state.ToMove())
+  // visited node cache
   std::unordered_map<uint64_t, TreeNode> visited_;
 
   // The base state for this game tree.
