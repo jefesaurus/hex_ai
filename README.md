@@ -1,5 +1,9 @@
 # Monte Carlo tree search for computer [Hex](https://en.wikipedia.org/wiki/Hex_(board_game))
 
+
+
+[![Build Status](https://travis-ci.org/jefesaurus/hex_ai.svg?branch=master)](https://travis-ci.org/jefesaurus/hex_ai/)
+
 # Required
   * bazel
   * gflags
