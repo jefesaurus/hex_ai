@@ -7,6 +7,8 @@ cc_library(
     srcs = ["src/easylogging++.cc"],
     hdrs = ["src/easylogging++.h"],
     defines = [
+        "ELPP_HANDLE_SIGABRT",
+        "ELPP_FEATURE_CRASH_LOG",
         "ELPP_THREAD_SAFE",
         "ELPP_NO_DEFAULT_LOG_FILE",
         "ELPP_STL_LOGGING",

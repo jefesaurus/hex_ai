@@ -2,7 +2,10 @@ package(default_visibility = ["//visibility:public"])
 
 cc_library(
     name = "base",
-    linkopts = ["-lm"],
+    linkopts = [
+        "-lm",
+        "-ldl",
+    ],
     deps = [
         ":init",
         ":logging",
@@ -31,7 +34,9 @@ cc_test(
 cc_library(
     name = "init",
     hdrs = ["init.h"],
-    deps = [":logging"],
+    deps = [
+        ":logging",
+    ],
 )
 
 cc_library(
@@ -41,6 +46,7 @@ cc_library(
         "-lgflags",
     ],
     deps = [
+        "@backwardcpp//:backwardcpp",
         "@easyloggingpp//:easyloggingpp",
     ],
 )
