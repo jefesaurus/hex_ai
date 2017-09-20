@@ -1,0 +1,6 @@
+dist: trusty
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install bazel 
+  - sudo apt-get install libglfags-dev 
+  - sudo apt-get install libgoogle-perftools-dev 
