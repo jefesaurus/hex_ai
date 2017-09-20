@@ -42,3 +42,11 @@ github_archive(
     commit = "deace2546ef4ff8f3e6349ec4f26d414753818c3",
     sha256 = "d4fae4f5206b66cc98eecb67c8e170b06256401fb69f1c41750fac1f227e4fda",
 )
+
+github_archive(
+    name = "backwardcpp",
+    repository = "bombela/backward-cpp",
+    commit = "b4c35c3c876c42b3f4ea00a3bcbddf005aac5ad0",
+    sha256 = "3cee96b881cdbeaf28a4c1f09a4e71392cdb9d095841007a71282dea5dc3c4f7",
+    build_file = "tools/backwardcpp.BUILD",
+)

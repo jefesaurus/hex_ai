@@ -3,8 +3,8 @@
 
 void RandomPlayout1() {
   HexState<5> state;
-  std::vector<int> moves{11, 19, 20, 10, 24, 21, 14, 23, 5,  12, 8, 4, 22,
-                         13, 18, 3,  0,  15, 7,  2,  1,  16, 17, 9, 6};
+  std::vector<int> moves{11, 19, 20, 10, 24, 21, 14, 23, 5, 12, 8,  4,
+                         22, 13, 18, 3,  0,  15, 7,  2,  1, 16, 17, 9};
   for (int i = 0; i < moves.size(); ++i) {
     state.SetPiece(moves[i]);
   }
