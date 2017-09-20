@@ -12,6 +12,23 @@ cc_library(
 )
 
 cc_library(
+    name = "gtest",
+    hdrs = ["googletest.h"],
+    deps = [
+        ":base",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "gtest_test",
+    srcs = ["gtest_test.cc"],
+    deps = [
+        ":gtest",
+    ],
+)
+
+cc_library(
     name = "init",
     hdrs = ["init.h"],
     deps = [":logging"],
