@@ -32,6 +32,13 @@ github_archive(
     name = "easyloggingpp",
     repository = "muflihun/easyloggingpp",
     commit = "468597048ed3797e9556237f8a3c014944ae126b",
-    sha256 = "3ac7ea8e56c3ed9701c564d704b63fe7379473fe85001a85ea5cc8bd95f02886",
+    sha256 = "b63779b62fd588cfebf3f3a65f2bc5db86527a5cd0d09b30ce4bf64063098f85",
     build_file = "tools/easyloggingpp.BUILD",
+)
+
+github_archive(
+    name = "googletest",
+    repository = "google/googletest",
+    commit = "deace2546ef4ff8f3e6349ec4f26d414753818c3",
+    sha256 = "d4fae4f5206b66cc98eecb67c8e170b06256401fb69f1c41750fac1f227e4fda",
 )
