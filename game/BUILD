@@ -25,7 +25,7 @@ cc_library(
     ],
 )
 
-cc_binary(
+cc_test(
     name = "hex_state_example",
     srcs = ["hex_state_example.cc"],
     deps = [
