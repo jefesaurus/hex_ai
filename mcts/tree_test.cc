@@ -4,6 +4,7 @@
 
 DEFINE_int32(num_trials, 100, "Num games to play out.");
 DEFINE_int32(num_iters, 100, "Num tree iterations for each move.");
+DEFINE_bool(view_boards, false, "Print boards");
 
 int main(int argc, char** argv) {
   Init(&argc, &argv);
@@ -17,6 +18,12 @@ int main(int argc, char** argv) {
       }
       const auto best_move = tree.GetBestMove();
       game.SetPiece(best_move.first);
+      if (FLAGS_view_boards) {
+        LOG(INFO) << FlipPlayer(game.ToMove()) << " plays " << best_move.first
+                  << ", and thinks it has this chance of winning: "
+                  << best_move.second;
+        LOG(INFO) << game;
+      }
     }
     LOG(INFO) << "Game " << i << " result: winner is " << game.Winner();
     winners[as_underlying(game.Winner())]++;

@@ -3,10 +3,19 @@
 #include "base/wall_timer.h"
 #include "game/hex_state.h"
 
+// Hex tree is the tree for one playout. Currently no way to iterate a tree down
+// itself for reusing computation on the next level.
+//
+// This creates a tree out of the supplied state of the board where root node
+// will aggregate contains the  win/loss stats for that state.
 template <int Size>
 class HexTree {
  private:
+  // The wins are relative to the player NOT to move, that is, the wins of the
+  // children are relative to this node, this node's wins are relative to its
+  // parent.
   struct TreeNode {
+    // Edges down to the next ply
     std::array<TreeNode*, Size* Size> children = {};
     int num_wins = 0;
     int num_visits = 0;
@@ -18,9 +27,16 @@ class HexTree {
     std::array<bool, Size * Size> available_moves;
 
     // If expand is true, that means we're still looking down the part of the
-    // tree we've seen before
+    // tree we've seen before. When this is flipped false, we finish the playout
+    // randomly and don't fill out the breadcrumb any further.
     bool expand;
+
+    // Depth is equal to the number of plies traversed by this simulation.
+    // Because the sim always starts at the root, this is always 1 or greater.
     int depth;
+
+    // The list of visited nodes out of the root node. The first one will always
+    // be the pointer to the root node for the entire HexTree.
     std::array<TreeNode*, Size * Size> breadcrumb;
   };
 
@@ -175,14 +191,14 @@ class HexTree {
       StepSimulation(&sim);
     }
 
-    // If the root won, winner_mod_2 = false
-    bool root_wins = root_sim_.state.ToMove() != sim.state.Winner();
+    bool root_wins = root_sim_.state.ToMove() == sim.state.Winner();
 
     // Backprop.
     auto& breadcrumb = sim.breadcrumb;
     for (int i = 0; i < sim.depth; ++i) {
       ++breadcrumb[i]->num_visits;
-      if (i % 2 != root_wins) {
+      // At the 0th level, if root_wins = 1, don't increment.
+      if (i % 2 == root_wins) {
         ++breadcrumb[i]->num_wins;
       }
     }
