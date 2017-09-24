@@ -13,6 +13,7 @@ cc_binary(
     srcs = ["tree_test.cc"],
     deps = [
         ":mcts",
+        "@junction_turf_bazel//:turf",
     ],
 )
 
@@ -25,5 +26,14 @@ cc_binary(
     ],
     deps = [
         ":mcts",
+    ],
+)
+
+cc_test(
+    name = "junction_test",
+    srcs = ["junction_test.cc"],
+    deps = [
+        "//base:gtest",
+        "@junction_turf_bazel//:junction",
     ],
 )
