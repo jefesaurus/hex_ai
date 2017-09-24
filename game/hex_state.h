@@ -29,6 +29,27 @@ constexpr int32_t ConstexprCeil(float num) {
 //                                Upper
 //(row = Size, col = Size)
 
+// The board state class is optimized to be able to run playouts quickly (and
+// determine when the game is over). This is why the state is stored a little
+// unintuitively. The pieces are kept as bitvectors of connected components for
+// each color(horizontal or vertical).
+//
+// The groups include sentinel pieces for each side: The horizontal groups
+// include a "lower" piece for the left side(col 0) and an "upper" piece of the
+// right side. The vertical groups have a lower piece for the top side(row 0),
+// and an upper piece for the bottom side.
+//
+// There are two groups for each color initially which consist of only the
+// sentinel pieces created in InitialHorizontalGroups()
+//
+// Whenever a piece is added to the board we grab the precomputed neighbor mask
+// and AND it with all of the connected components of that color. This tells
+// us 1: Which connected component to add this piece too, and also 2: whether we
+// need to now merge some previous connected components.
+//
+// The game is over whenever you try to merge the last two groups which
+// indicates that there is now a single connected component containing the lower
+// and the upper sentinels.
 template <int Size>
 class HexState {
  public:
@@ -312,7 +333,9 @@ class HexState {
   static std::array<std::bitset<kNumCells + 4>, kMaxNumGroups>
   InitialHorizontalGroups() {
     std::array<std::bitset<kNumCells + 4>, kMaxNumGroups> groups;
+    // Column -1 sentinel
     groups[0][kNumCells] = true;
+    // Column Max sentinel
     groups[1][kNumCells + 1] = true;
     return groups;
   }
@@ -320,7 +343,9 @@ class HexState {
   static std::array<std::bitset<kNumCells + 4>, kMaxNumGroups>
   InitialVerticalGroups() {
     std::array<std::bitset<kNumCells + 4>, kMaxNumGroups> groups;
+    // Row -1 sentinel
     groups[0][kNumCells + 2] = true;
+    // Row Max sentinel
     groups[1][kNumCells + 3] = true;
     return groups;
   }
