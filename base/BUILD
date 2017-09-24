@@ -19,7 +19,7 @@ cc_library(
     hdrs = ["googletest.h"],
     deps = [
         ":base",
-        "@googletest//:gtest",
+        "@com_google_googletest//:gtest",
     ],
 )
 

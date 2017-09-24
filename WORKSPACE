@@ -37,7 +37,7 @@ github_archive(
 )
 
 github_archive(
-    name = "googletest",
+    name = "com_google_googletest",
     repository = "google/googletest",
     commit = "deace2546ef4ff8f3e6349ec4f26d414753818c3",
     sha256 = "d4fae4f5206b66cc98eecb67c8e170b06256401fb69f1c41750fac1f227e4fda",
@@ -49,4 +49,11 @@ github_archive(
     commit = "b4c35c3c876c42b3f4ea00a3bcbddf005aac5ad0",
     sha256 = "3cee96b881cdbeaf28a4c1f09a4e71392cdb9d095841007a71282dea5dc3c4f7",
     build_file = "tools/backwardcpp.BUILD",
+)
+
+github_archive(
+    name = "junction_turf_bazel",
+    repository = "jefesaurus/junction_turf_bazel",
+    commit = "64ac17867f17dedc990a0d3518fe6edc2daa60cd",
+    sha256 = "8d4589bfd2b2cc799cbd841d8380f6c44b853c9f1882807f9e03459175a7406d",
 )
