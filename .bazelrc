@@ -2,7 +2,6 @@ build --crosstool_top=//tools:CROSSTOOL
 build --copt=-Wall
 build --copt=-Werror
 build --copt=-Wno-unused-function
-build --copt=-Wno-overloaded-virtual
 build --copt=-Wno-strict-overflow
 build --copt=-Wno-sign-compare
 build --copt=-mavx
