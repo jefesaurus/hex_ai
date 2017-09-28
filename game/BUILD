@@ -46,3 +46,13 @@ cc_binary(
         "//base",
     ],
 )
+
+proto_library(
+    name = "hex_state_proto",
+    srcs = ["hex_state.proto"],
+)
+
+cc_proto_library(
+    name = "hex_state_cc_proto",
+    deps = ["hex_state_proto"],
+)
