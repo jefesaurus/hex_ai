@@ -57,3 +57,24 @@ github_archive(
     commit = "64ac17867f17dedc990a0d3518fe6edc2daa60cd",
     sha256 = "8d4589bfd2b2cc799cbd841d8380f6c44b853c9f1882807f9e03459175a7406d",
 )
+
+github_archive(
+    name = "com_google_protobuf",
+    repository = "google/protobuf",
+    commit = "v3.4.1",
+    sha256 = "8e0236242106e680b4f9f576cc44b8cd711e948b20a9fc07769b0a20ceab9cc4",
+)
+
+github_archive(
+    name = "com_google_protobuf_cc",
+    repository = "google/protobuf",
+    commit = "v3.4.1",
+    sha256 = "8e0236242106e680b4f9f576cc44b8cd711e948b20a9fc07769b0a20ceab9cc4",
+)
+
+github_archive(
+    name = "nanomsg",
+    repository = "nanomsg/nanomsg",
+    commit = "5eb73201f7e7d5e2cd9fe0f7927077d1bc0f0c53",
+    sha256 = "8e0236242106e680b4f9f576cc44b8cd711e948b20a9fc07769b0a20ceab9cc4",
+)
