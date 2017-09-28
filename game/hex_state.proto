@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package hex_ai.proto;
+
+enum PieceType {
+  kEmpty = 0;
+  kHorizontal = 1;
+  kVertical = 2;
+}
+
+message HexState {
+  // Size of one side of the board
+  int32 size = 1;
+
+  // Should not be kEmpty.
+  PieceType to_move = 2;
+
+  // Should be exactly size * size
+  repeated PieceType positions = 3;
+}
