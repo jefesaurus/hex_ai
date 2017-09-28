@@ -11,6 +11,7 @@ before_install:
   - sudo apt-get install binutils-dev
   - sudo apt-get install libgflags-dev 
   - sudo apt-get install libgoogle-perftools-dev 
+  - sudo apt-get install libzmq3-dev 
 
 script:
   - bazel test -c opt //...
