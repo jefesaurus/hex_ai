@@ -4,29 +4,15 @@ load("//tools:github.bzl", "github_archive")
 github_archive(
     name = "io_bazel_rules_go",
     repository = "bazelbuild/rules_go",
-    commit = "0.4.4",
-    sha256 = "afec53d875013de6cebe0e51943345c587b41263fdff36df5ff651fbf03c1c08",  # noqa
+    commit = "0.5.5",
+    sha256 = "fe5fd71624db32f01ce3445ff54dcbc038666847f688695fd3a13859e222ae7c",
 )
 
 # Necessary for buildifier.
-load("@io_bazel_rules_go//go:def.bzl", "go_repositories", "new_go_repository")
+load("@io_bazel_rules_go//go:def.bzl", "go_repositories")
 
 # Necessary for buildifier.
 go_repositories()
-
-# Necessary for buildifier.
-new_go_repository(
-    name = "org_golang_x_tools",
-    commit = "3d92dd60033c312e3ae7cac319c792271cf67e37",
-    importpath = "golang.org/x/tools",
-)
-
-github_archive(
-    name = "com_github_bazelbuild_buildtools",
-    repository = "bazelbuild/buildtools",
-    commit = "7ce605fb1585076ed681e37d82d0ef529244b23a",
-    sha256 = "c6210992d328212a7752a2c888a15f5c597dbf31f03ac0d59457ceff2928a30b",
-)
 
 github_archive(
     name = "easyloggingpp",
@@ -59,35 +45,36 @@ github_archive(
 )
 
 github_archive(
-    name = "com_google_protobuf",
-    repository = "google/protobuf",
-    commit = "v3.4.1",
-    sha256 = "8e0236242106e680b4f9f576cc44b8cd711e948b20a9fc07769b0a20ceab9cc4",
+  name = "org_pubref_rules_protobuf",
+  repository = "pubref/rules_protobuf",
+  commit = "v0.8.1",
+  sha256 = "fb9852446b5ba688cd7178a60ff451623e4112d015c6adfe0e9a06c5d2dedc08",
 )
 
+load("@org_pubref_rules_protobuf//cpp:rules.bzl", "cpp_proto_repositories")
+cpp_proto_repositories( excludes = ["com_google_googletest",])
+
+load("@org_pubref_rules_protobuf//python:rules.bzl", "py_proto_repositories")
+py_proto_repositories(omit_cpp_repositories = True, excludes = ["com_google_googletest",])
+
+
+# Bazel python rules
 github_archive(
-    name = "com_google_protobuf_cc",
-    repository = "google/protobuf",
-    commit = "v3.4.1",
-    sha256 = "8e0236242106e680b4f9f576cc44b8cd711e948b20a9fc07769b0a20ceab9cc4",
+    name = "io_bazel_rules_python",
+    repository = "bazelbuild/rules_python",
+    commit = "fa77c9c1118380e066c88b955c90fb3c7353429e",
+    sha256 = "ea23e1b12287f55b3948fd5f66bc5a49ab40e9962107853d7618cfd535823390",
 )
 
-github_archive(
-    name = "nanomsg",
-    repository = "nanomsg/nanomsg",
-    commit = "5eb73201f7e7d5e2cd9fe0f7927077d1bc0f0c53",
-    sha256 = "8e0236242106e680b4f9f576cc44b8cd711e948b20a9fc07769b0a20ceab9cc4",
+load("@io_bazel_rules_python//python:pip.bzl", "pip_repositories", "pip_import")
+
+pip_repositories()
+
+pip_import(
+   name = "pip_grpcio",
+   requirements = "@org_pubref_rules_protobuf//python:requirements.txt",
 )
 
+load("@pip_grpcio//:requirements.bzl", pip_grpcio_install = "pip_install")
 
-new_http_archive(
-    name = "six_archive",
-    build_file = "tools/six.BUILD",
-    sha256 = "105f8d68616f8248e24bf0e9372ef04d3cc10104f1980f54d57b2ce73a5ad56a",
-    url = "https://pypi.python.org/packages/source/s/six/six-1.10.0.tar.gz#md5=34eed507548117b2ab523ab14b2f8b55",
-)
-
-bind(
-    name = "six",
-    actual = "@six_archive//:six",
-)
+pip_grpcio_install()

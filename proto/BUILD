@@ -1,32 +1,25 @@
 package(default_visibility = ["//visibility:public"])
 
-load("@com_google_protobuf//:protobuf.bzl", "py_proto_library")
-
-proto_library(
-    name = "proto_test_proto",
-    srcs = ["proto_test.proto"],
-)
+load("@org_pubref_rules_protobuf//cpp:rules.bzl", "cc_proto_library")
+load("@org_pubref_rules_protobuf//python:rules.bzl", "py_proto_library")
 
 cc_proto_library(
-    name = "proto_test_cc_proto",
-    deps = [":proto_test_proto"],
-)
-
-cc_test(
-    name = "proto_test",
-    srcs = ["proto_test.cc"],
-    deps = [":proto_test_cc_proto", "//base:gtest"],
+    name = "hex_state_cc_proto",
+    protos = ["hex_state.proto"],
+    with_grpc = True,
 )
 
 py_proto_library(
-    name = "proto_test_py_proto",
-    srcs = ["proto_test.proto"],
-    protoc = "@com_google_protobuf//:protoc",
-    default_runtime = "@com_google_protobuf//:protobuf_python",
+    name = "hex_state_py_proto",
+    protos = ["hex_state.proto"],
+    with_grpc = True,
 )
 
-py_binary(
-    name = "python_test",
-    srcs = ["python_test.py"],
-    deps = [":proto_test_py_proto"],
+cc_test(
+    name = "hex_state_test",
+    srcs = ["hex_state_test.cc"],
+    deps = [
+        ":hex_state_cc_proto",
+        "//base:gtest",
+    ],
 )
