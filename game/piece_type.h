@@ -18,8 +18,7 @@ constexpr auto as_underlying(Enumeration const value) ->
 }
 
 // Steam operator for pretty printing PieceType
-template <typename OStream>
-inline OStream& operator<<(OStream& os, const PieceType& val) {
+inline std::ostream& operator<<(std::ostream& os, const PieceType& val) {
   switch (val) {
     case PieceType::kEmpty:
       os << '-';

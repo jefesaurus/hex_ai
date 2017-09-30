@@ -26,10 +26,11 @@ cc_library(
 )
 
 cc_test(
-    name = "hex_state_example",
-    srcs = ["hex_state_example.cc"],
+    name = "hex_state_test",
+    srcs = ["hex_state_test.cc"],
     deps = [
         ":hex_state",
+        "//base:gtest",
     ],
 )
 
@@ -40,7 +41,6 @@ cc_binary(
         "-Wl,-no-as-needed",
         "-lprofiler",
     ],
-    #copts = ["-pg"],
     deps = [
         ":hex_state",
         "//base",
