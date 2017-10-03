@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package hex_service;
+
+message GameDescription {
+  // Unique ID
+  int64 id = 1;
+
+  // Description
+  string label = 2;
+}
+
+service Hexecutive {
+  rpc ListGames (ListGamesRequest) returns (ListGamesReply) {}
+}
+
+message ListGamesRequest {
+}
+
+message ListGamesReply {
+  repeated GameDescription games = 1;
+}
