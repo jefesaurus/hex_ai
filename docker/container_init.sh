@@ -1,22 +1,20 @@
 #!/bin/bash -e
 # One time setup for the target user to be run within the container as the "entrypoint"
 
-mount_point=$REPO_ROOT
+home_dir=$REPO_ROOT/docker
 
 target_username="${TARGET_USER}"
-target_uid="$(stat --printf=%u ${mount_point})"
-target_gid="$(stat --printf=%g ${mount_point})"
+target_uid="$(stat --printf=%u ${home_dir})"
+target_gid="$(stat --printf=%g ${home_dir})"
 
 groupadd -g ${target_gid} ${target_username}
 useradd -No \
         -s /bin/bash \
-        -d ${mount_point} \
+        -d ${home_dir} \
         -u ${target_uid} \
         -g ${target_gid} \
         -G sudo,video \
         ${target_username}
-
-# ln -s $REPO_ROOT/docker/.bashrc $REPO_ROOT/.bashrc
 
 cat > /etc/sudoers <<-EOF
 	Defaults    !secure_path
