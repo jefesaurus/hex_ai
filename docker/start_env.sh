@@ -4,7 +4,7 @@ set -o xtrace
 # Kills the existing container and starts a new one
 
 DIR=$(dirname $(readlink -f "$0"))
-$DIR/running_in_docker.sh
+$DIR/inside_docker.sh
 REPO_ROOT=$(readlink -f $DIR/..)
 CONTAINER_BASE=$(basename $REPO_ROOT)
 CONTAINER_ID=hex_ai_container
