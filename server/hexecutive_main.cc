@@ -1,8 +1,11 @@
+#include "base/init.h"
 #include "base/logging.h"
 #include "server/hexecutive.h"
 
+DEFINE_int32(port, 50051, "Port to run Hexecutive on.");
+
 void RunServer() {
-  std::string server_address("0.0.0.0:50051");
+  std::string server_address("0.0.0.0:" + std::to_string(FLAGS_port));
   HexecutiveImpl service;
 
   grpc::ServerBuilder builder;
@@ -20,7 +23,8 @@ void RunServer() {
   server->Wait();
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
+  Init(&argc, &argv);
   RunServer();
   return 0;
 }

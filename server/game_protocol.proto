@@ -2,9 +2,15 @@ syntax = "proto3";
 
 package hex_service;
 
+message Player {
+  uint64 id = 1;
+  uint64 key = 2;
+  string username = 3;
+}
+
 message GameDescription {
   // Unique ID
-  int64 id = 1;
+  uint64 id = 1;
 
   // Description
   string label = 2;
@@ -12,6 +18,7 @@ message GameDescription {
 
 service Hexecutive {
   rpc ListGames (ListGamesRequest) returns (ListGamesReply) {}
+  rpc RegisterPlayer (RegisterPlayerRequest) returns (RegisterPlayerReply) {}
 }
 
 message ListGamesRequest {
@@ -19,4 +26,12 @@ message ListGamesRequest {
 
 message ListGamesReply {
   repeated GameDescription games = 1;
+}
+
+message RegisterPlayerRequest {
+  string username = 1;
+}
+
+message RegisterPlayerReply {
+  Player player = 1;
 }

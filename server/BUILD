@@ -27,7 +27,11 @@ py_proto_library(
 cc_library(
     name = "hexecutive",
     srcs = ["hexecutive.h"],
-    deps = [":game_protocol_cc_proto"],
+    deps = [
+        ":game_protocol_cc_proto",
+        "//base:init",
+        "//base:logging",
+    ],
 )
 
 cc_binary(
@@ -35,6 +39,15 @@ cc_binary(
     srcs = ["hexecutive_main.cc"],
     deps = [
         ":hexecutive",
+        "//base:logging",
+    ],
+)
+
+cc_library(
+    name = "hex_client",
+    hdrs = ["hex_client.h"],
+    deps = [
+        ":game_protocol_cc_proto",
         "//base:logging",
     ],
 )
