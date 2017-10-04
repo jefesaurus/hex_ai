@@ -32,8 +32,9 @@ github_archive(
 github_archive(
     name = "backwardcpp",
     repository = "bombela/backward-cpp",
-    commit = "b4c35c3c876c42b3f4ea00a3bcbddf005aac5ad0",
-    sha256 = "3cee96b881cdbeaf28a4c1f09a4e71392cdb9d095841007a71282dea5dc3c4f7",
+    # TODO(glalonde) This is from an MR with a fix we need
+    commit = "cd155ec977d9e6c2ad194943b4981fb3e09a2734",
+    sha256 = "a416c6ea91fdba853b41bee72c4a71c908827b9c093b834084acc68a67ad650e",
     build_file = "tools/backwardcpp.BUILD",
 )
 

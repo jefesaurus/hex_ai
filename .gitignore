@@ -1,5 +1,6 @@
 *.class
 *.pyc
+*.*
 
 # Package Files #
 *.jar

@@ -1,8 +1,8 @@
-if [[ -z "$WORKSPACE_ROOT" ]]
+if [[ -z "$REPO_ROOT" ]]
 then
-    WORKSPACE_SETUP_SH=${BASH_SOURCE[0]}
-    WORKSPACE_ROOT=$(dirname $(readlink -e $WORKSPACE_SETUP_SH))
+    REPO_SETUP_SH=${BASH_SOURCE[0]}
+    REPO_ROOT=$(dirname $(readlink -e $REPO_SETUP_SH))
 fi
-export WORKSPACE_ROOT
-export PATH=$WORKSPACE_ROOT/tools/bin:$PATH
-export PYTHONPATH=$WORKSPACE_ROOT:$PYTHONPATH
+export REPO_ROOT
+export PATH=$REPO_ROOT/tools/bin:$PATH
+export PYTHONPATH=$REPO_ROOT:$PYTHONPATH

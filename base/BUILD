@@ -86,3 +86,11 @@ cc_binary(
     srcs = ["init_example.cc"],
     deps = [":init"],
 )
+
+cc_test(
+    name = "optional_test",
+    srcs = ["optional_test.cc"],
+    deps = [
+        ":gtest",
+    ],
+)
