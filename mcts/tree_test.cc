@@ -7,12 +7,13 @@ DEFINE_int32(num_iters, 100, "Num tree iterations for each move.");
 DEFINE_bool(view_boards, false, "Print boards");
 
 int main(int argc, char** argv) {
+  constexpr int kGameSize = 7;
   Init(&argc, &argv);
   std::unordered_map<int, int> winners;
   for (int i = 0; i < FLAGS_num_trials; ++i) {
-    HexState<11> game;
+    HexState<kGameSize> game;
     while (!game.GameIsOver()) {
-      HexTree<11> tree(game);
+      HexTree<kGameSize> tree(game);
       for (int j = 0; j < FLAGS_num_iters; ++j) {
         tree.RunSimulation();
       }

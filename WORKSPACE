@@ -45,6 +45,14 @@ github_archive(
 )
 
 github_archive(
+    name = "tiny_dnn",
+    repository = "tiny-dnn/tiny-dnn",
+    commit = "dd906fed8c8aff8dc837657c42f9d55f8b793b0e",
+    sha256 = "6f50aedcfd7dfd40f7fabe1bad66df478eda6640981ea4c06c4b97297a379a56",
+    build_file = "tools/tiny_dnn.BUILD",
+)
+
+github_archive(
   name = "org_pubref_rules_protobuf",
   repository = "pubref/rules_protobuf",
   commit = "v0.8.1",
