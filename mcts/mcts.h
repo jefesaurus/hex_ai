@@ -16,7 +16,7 @@ class HexTree {
   // parent.
   struct TreeNode {
     // Edges down to the next ply
-    std::array<TreeNode*, Size* Size> children = {};
+    std::array<TreeNode*, HexState<Size>::kNumMoves> children = {};
     int num_wins = 0;
     int num_visits = 0;
   };
@@ -24,7 +24,7 @@ class HexTree {
   // The state required for one simulated play.
   struct SimulationState {
     HexState<Size> state;
-    std::array<bool, Size * Size> available_moves;
+    std::array<bool, HexState<Size>::kNumMoves> available_moves;
 
     // If expand is true, that means we're still looking down the part of the
     // tree we've seen before. When this is flipped false, we finish the playout
@@ -37,7 +37,7 @@ class HexTree {
 
     // The list of visited nodes out of the root node. The first one will always
     // be the pointer to the root node for the entire HexTree.
-    std::array<TreeNode*, Size * Size> breadcrumb;
+    std::array<TreeNode*, HexState<Size>::kNumMoves + 1> breadcrumb;
   };
 
  public:
@@ -80,13 +80,10 @@ class HexTree {
     DCHECK(!sim->state.GameIsOver());
     DCHECK(sim->expand);
     DCHECK_GT(sim->depth, 0);
-    DCHECK_LE(sim->depth, Size * Size);
+    DCHECK_LE(sim->depth, HexState<Size>::kNumMoves + 1);
 
     auto& current_node = sim->breadcrumb[sim->depth - 1];
-    static const auto& hasher = HexState<Size>::Hasher();
     auto& children = current_node->children;
-
-    const auto& to_move = sim->state.ToMove();
 
     // The visited map for the next level down.
     int total_visits = 0;
@@ -95,12 +92,11 @@ class HexTree {
         if (!children[i]) {
           // This is a branch we haven't tried before, check if we've seen the
           // resulting state before.
-          uint64_t next_hash = sim->state.Hash();
-          hasher.FlipPiece(i, to_move, &next_hash);
+          uint64_t next_hash = sim->state.HashIf(i);
           auto map_it = visited_.find(next_hash);
           if (map_it == visited_.end()) {
             // Unexpanded moves have infinite score, so choose this.
-            sim->state.SetPiece(i);
+            sim->state.MakeMove(i);
             // Create a new tree node
             auto new_map_it =
                 visited_.emplace(std::make_pair(next_hash, TreeNode()));
@@ -109,10 +105,18 @@ class HexTree {
             new_node->num_wins = 0;
             new_node->children.fill(nullptr);
             // This is the end of the expansion.
-            sim->expand = false;
             children[i] = new_node;
             sim->breadcrumb[sim->depth++] = new_node;
-            sim->available_moves[i] = false;
+            if (sim->state.MoveNumber() <= 2) {
+              sim->available_moves = sim->state.AvailableMoves();
+              // If we haven't gotten past the "swap" rule possibility yet, keep
+              // expanding a bit.
+            } else {
+              // After the second move, available moves will monotonically
+              // decrease bits, so we don't need to query anymore.
+              sim->expand = false;
+              sim->available_moves[i] = false;
+            }
             return;
           } else {
             // We actually have visited this node before, update the branch
@@ -125,9 +129,10 @@ class HexTree {
       }
     }
 
-    // Now we have log total.
     int best_move = -1;
     double best_score = -1;
+
+    // Now we have log total.
     total_visits = std::log(total_visits);
     for (int i = 0; i < sim->available_moves.size(); ++i) {
       // We've already taken this branch before.
@@ -144,16 +149,21 @@ class HexTree {
     DCHECK_GE(best_move, 0);
 
     // And apply the selected move.
-    sim->state.SetPiece(best_move);
+    sim->state.MakeMove(best_move);
     sim->breadcrumb[sim->depth++] = children[best_move];
-    sim->available_moves[best_move] = false;
+    if (sim->state.MoveNumber() <= 2) {
+      sim->available_moves = sim->state.AvailableMoves();
+    } else {
+      // After the second move, available moves will monotonically
+      // decrease bits, so we don't need to query anymore.
+      sim->available_moves[best_move] = false;
+    }
   }
 
   void FinishRandom(SimulationState* sim) {
     DCHECK(!sim->state.GameIsOver());
     DCHECK(!sim->expand);
-    DCHECK_GT(sim->state.EmptySpaces(), 0);
-    std::array<int, Size * Size> moves;
+    std::array<int, HexState<Size>::kNumMoves> moves;
     int n_moves = 0;
     for (int i = 0; i < sim->available_moves.size(); ++i) {
       if (sim->available_moves[i]) {
@@ -165,14 +175,14 @@ class HexTree {
     for (int i = n_moves - 1; i > 0; --i) {
       // With modulo bias, call the cops
       int j = gen_() % i;
-      sim->state.SetPiece(moves[j]);
+      sim->state.MakeMove(moves[j]);
       if (sim->state.GameIsOver()) {
         break;
       }
       moves[j] = moves[i];
     }
     if (!sim->state.GameIsOver()) {
-      sim->state.SetPiece(moves[0]);
+      sim->state.MakeMove(moves[0]);
     }
   }
 
@@ -186,7 +196,6 @@ class HexTree {
 
   void RunSimulation() {
     SimulationState sim = root_sim_;
-    DCHECK_GT(sim.state.EmptySpaces(), 0);
     while (!sim.state.GameIsOver()) {
       StepSimulation(&sim);
     }

@@ -94,3 +94,9 @@ cc_test(
         ":gtest",
     ],
 )
+
+cc_library(
+    name = "constexpr_ceil",
+    hdrs = ["constexpr_ceil.h"],
+    deps = [],
+)

@@ -13,13 +13,14 @@ void PrintStackTrace(int sig) {
   LOG(ERROR) << "Crashed with signal: " << sig;
   backward::StackTrace st;
   st.load_here(99);     // Limit the number of trace depth to 99
-  st.skip_n_firsts(2);  // This will skip some backward internal function
+  st.skip_n_firsts(0);  // This will skip some backward internal function
   backward::Printer p;
   p.snippet = true;
   p.object = true;
   p.color_mode = backward::ColorMode::automatic;
   p.address = true;
   p.print(st, stderr);
+  el::Helpers::crashAbort(sig);
 }
 
 // Read flags for EasyLogging

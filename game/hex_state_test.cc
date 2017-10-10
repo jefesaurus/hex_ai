@@ -2,92 +2,33 @@
 #include "base/googletest.h"
 #include "base/init.h"
 
-TEST(HexStateTest, RandomPlayout) {
+TEST(HexStateTest, Swap) {
   HexState<5> state;
-  std::vector<int> moves{11, 19, 20, 10, 24, 21, 14, 23, 5, 12, 8,  4,
-                         22, 13, 18, 3,  0,  15, 7,  2,  1, 16, 17, 9};
-  for (int i = 0; i < moves.size(); ++i) {
-    state.SetPiece(moves[i]);
-  }
-  EXPECT_TRUE(state.GameIsOver());
-  EXPECT_EQ(state.Winner(), PieceType::kVertical);
+  auto moves = state.AvailableMoves();
+  EXPECT_TRUE(moves[10]);
+  state.MakeMove(10);
+  auto start_hash = state.Hash();
+  moves = state.AvailableMoves();
+  ASSERT_TRUE(moves[10]);
+  state.MakeMove(10);
+  moves = state.AvailableMoves();
+  auto after_swap_hash = state.Hash();
+  EXPECT_NE(start_hash, after_swap_hash);
+  EXPECT_FALSE(moves[10]);
 }
 
-TEST(HexStateTest, HorizontalPlayout1) {
+TEST(HexStateTest, SwapMoveNumber) {
   HexState<5> state;
-  state.SetPiece(0, 0);
-  state.SetPiece(1, 0);
-  EXPECT_FALSE(state.GameIsOver());
-  state.SetPiece(0, 1);
-  state.SetPiece(1, 1);
-  EXPECT_FALSE(state.GameIsOver());
-  state.SetPiece(0, 2);
-  state.SetPiece(1, 2);
-  EXPECT_FALSE(state.GameIsOver());
-  state.SetPiece(0, 3);
-  state.SetPiece(1, 3);
-  EXPECT_FALSE(state.GameIsOver());
-  state.SetPiece(0, 4);
-  EXPECT_TRUE(state.GameIsOver());
-  EXPECT_EQ(state.Winner(), PieceType::kHorizontal);
-}
-
-TEST(HexStateTest, HorizontalPlayout2) {
-  HexState<5> state;
-  state.SetPiece(0, 4);
-  state.SetPiece(1, 4);
-  EXPECT_FALSE(state.GameIsOver());
-  state.SetPiece(0, 3);
-  state.SetPiece(1, 3);
-  EXPECT_FALSE(state.GameIsOver());
-  state.SetPiece(0, 1);
-  state.SetPiece(1, 1);
-  EXPECT_FALSE(state.GameIsOver());
-  state.SetPiece(0, 0);
-  state.SetPiece(1, 0);
-  EXPECT_FALSE(state.GameIsOver());
-  state.SetPiece(0, 2);
-  EXPECT_TRUE(state.GameIsOver());
-  EXPECT_EQ(state.Winner(), PieceType::kHorizontal);
-}
-
-TEST(HexStateTest, HorizontalPlayout3) {
-  HexState<5> state;
-  state.SetPiece(0, 0);
-  state.SetPiece(1, 0);
-  EXPECT_FALSE(state.GameIsOver());
-  state.SetPiece(0, 1);
-  state.SetPiece(1, 1);
-  EXPECT_FALSE(state.GameIsOver());
-  state.SetPiece(0, 2);
-  state.SetPiece(1, 2);
-  EXPECT_FALSE(state.GameIsOver());
-  state.SetPiece(0, 3);
-  state.SetPiece(1, 3);
-  EXPECT_FALSE(state.GameIsOver());
-  state.SetPiece(0, 4);
-  EXPECT_TRUE(state.GameIsOver());
-  EXPECT_EQ(state.Winner(), PieceType::kHorizontal);
-}
-
-TEST(HexStateTest, VerticalPlayout) {
-  HexState<5> state;
-  state.SetPiece(0, 1);
-  state.SetPiece(0, 0);
-  EXPECT_FALSE(state.GameIsOver());
-  state.SetPiece(1, 1);
-  state.SetPiece(1, 0);
-  EXPECT_FALSE(state.GameIsOver());
-  state.SetPiece(2, 1);
-  state.SetPiece(2, 0);
-  EXPECT_FALSE(state.GameIsOver());
-  state.SetPiece(3, 1);
-  state.SetPiece(3, 0);
-  EXPECT_FALSE(state.GameIsOver());
-  state.SetPiece(4, 1);
-  state.SetPiece(4, 0);
-  EXPECT_TRUE(state.GameIsOver());
-  EXPECT_EQ(state.Winner(), PieceType::kVertical);
+  LOG(INFO) << state.MoveNumber();
+  LOG(INFO) << state.AvailableMoves();
+  state.MakeMove(10);
+  LOG(INFO) << state;
+  LOG(INFO) << state.MoveNumber();
+  LOG(INFO) << state.AvailableMoves();
+  state.MakeMove(11);
+  LOG(INFO) << state;
+  LOG(INFO) << state.MoveNumber();
+  LOG(INFO) << state.AvailableMoves();
 }
 
 GTEST_MAIN();

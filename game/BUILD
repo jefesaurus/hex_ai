@@ -16,12 +16,30 @@ cc_library(
 )
 
 cc_library(
+    name = "hex_board",
+    hdrs = ["hex_board.h"],
+    deps = [
+        ":piece_type",
+        "//base",
+        "//base:constexpr_ceil",
+    ],
+)
+
+cc_test(
+    name = "hex_board_test",
+    srcs = ["hex_board_test.cc"],
+    deps = [
+        ":hex_board",
+        "//base:gtest",
+    ],
+)
+
+cc_library(
     name = "hex_state",
     hdrs = ["hex_state.h"],
     deps = [
-        ":piece_type",
+        ":hex_board",
         ":zobrist",
-        "//base",
     ],
 )
 

@@ -27,7 +27,7 @@ std::array<int, 3> RunPlayouts(
     HexState<GameSize> state;
     int move_number(0);
     while (!state.GameIsOver()) {
-      state.SetPiece(moves_current[move_number]);
+      state.MakeMove(moves_current[move_number]);
       move_number++;
     }
     ++wins[as_underlying(state.Winner())];

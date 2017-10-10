@@ -2,8 +2,11 @@
 #include "base/wall_timer.h"
 #include "mcts/mcts.h"
 
+// Test out win percentages with different iteration counts for each agent.
+
 DEFINE_int32(num_trials, 100, "Num games to play out.");
-DEFINE_int32(num_iters, 100, "Num tree iterations for each move.");
+DEFINE_int32(num_iters_h, 100, "Num tree iterations for each horizontal move.");
+DEFINE_int32(num_iters_v, 100, "Num tree iterations for each vertical move.");
 DEFINE_bool(view_boards, false, "Print boards");
 
 int main(int argc, char** argv) {
@@ -13,7 +16,10 @@ int main(int argc, char** argv) {
     HexState<11> game;
     while (!game.GameIsOver()) {
       HexTree<11> tree(game);
-      for (int j = 0; j < FLAGS_num_iters; ++j) {
+      const int num_iters =
+          (game.ToMove() == PieceType::kHorizontal ? FLAGS_num_iters_h
+                                                   : FLAGS_num_iters_v);
+      for (int j = 0; j < num_iters; ++j) {
         tree.RunSimulation();
       }
       const auto best_move = tree.GetBestMove();

@@ -30,8 +30,8 @@ class ZobristHasher {
 
  private:
   static const HashType& GetBitString(int cell_index, PieceType piece) {
-    DCHECK_GE(cell_index, 0);
-    DCHECK_LT(cell_index, NumCells);
+    DCHECK_GE(cell_index, 0) << cell_index;
+    DCHECK_LT(cell_index, NumCells) << cell_index;
     return ZobristHasher<NumCells, HashType>::table_[cell_index +
                                                      as_underlying(piece) *
                                                          NumCells];
