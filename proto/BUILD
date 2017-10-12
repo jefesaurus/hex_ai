@@ -62,12 +62,20 @@ cc_test(
     ],
 )
 
+py_library(
+    name = "proto_file_py",
+    srcs = ["proto_file.py"],
+    deps = [
+        "@com_google_protobuf//:protobuf_python",
+    ],
+)
+
 py_test(
     name = "proto_file_py_test",
     size = "small",
     srcs = ["proto_file_py_test.py"],
     deps = [
+        ":proto_file_py",
         ":test_py_proto",
-        "@com_google_protobuf//:protobuf_python",
     ],
 )
