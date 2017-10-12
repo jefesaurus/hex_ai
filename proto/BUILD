@@ -23,3 +23,35 @@ cc_test(
         "//base:gtest",
     ],
 )
+
+cc_library(
+    name = "proto_file",
+    srcs = ["proto_file.h"],
+    linkopts = ["-lstdc++fs"],
+    deps = [
+        "//base:logging",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_proto_library(
+    name = "test_cc_proto",
+    protos = ["test.proto"],
+    with_grpc = True,
+)
+
+filegroup(
+    name = "testdata",
+    srcs = glob(["testdata/*"]),
+)
+
+cc_test(
+    name = "proto_file_test",
+    srcs = ["proto_file_test.cc"],
+    data = [":testdata"],
+    deps = [
+        ":proto_file",
+        ":test_cc_proto",
+        "//base:gtest",
+    ],
+)

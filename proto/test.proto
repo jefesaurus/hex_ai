@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package hex_ai.proto;
+
+message HelloProto {
+  int32 number = 1;
+  repeated int32 vals = 2;
+  string label = 3;
+}
