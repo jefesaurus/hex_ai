@@ -78,6 +78,7 @@ load("@io_bazel_rules_python//python:pip.bzl", "pip_repositories", "pip_import")
 
 pip_repositories()
 
+# Install pip package grpcio
 pip_import(
    name = "pip_grpcio",
    requirements = "@org_pubref_rules_protobuf//python:requirements.txt",
@@ -86,3 +87,15 @@ pip_import(
 load("@pip_grpcio//:requirements.bzl", pip_grpcio_install = "pip_install")
 
 pip_grpcio_install()
+
+new_http_archive(
+    name = "six_archive",
+    build_file = "tools/six.BUILD",
+    sha256 = "105f8d68616f8248e24bf0e9372ef04d3cc10104f1980f54d57b2ce73a5ad56a",
+    url = "https://pypi.python.org/packages/source/s/six/six-1.10.0.tar.gz#md5=34eed507548117b2ab523ab14b2f8b55",
+)
+
+bind(
+    name = "six",
+    actual = "@six_archive//:six",
+ )

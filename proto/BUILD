@@ -40,6 +40,12 @@ cc_proto_library(
     with_grpc = True,
 )
 
+py_proto_library(
+    name = "test_py_proto",
+    protos = ["test.proto"],
+    with_grpc = True,
+)
+
 filegroup(
     name = "testdata",
     srcs = glob(["testdata/*"]),
@@ -53,5 +59,15 @@ cc_test(
         ":proto_file",
         ":test_cc_proto",
         "//base:gtest",
+    ],
+)
+
+py_test(
+    name = "proto_file_py_test",
+    size = "small",
+    srcs = ["proto_file_py_test.py"],
+    deps = [
+        ":test_py_proto",
+        "@com_google_protobuf//:protobuf_python",
     ],
 )
