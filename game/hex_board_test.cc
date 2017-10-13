@@ -1,6 +1,5 @@
 #include "game/hex_board.h"
 #include "base/googletest.h"
-#include "base/init.h"
 
 TEST(HexBoardTest, HorizontalPlayout1) {
   HexBoard<5> state;

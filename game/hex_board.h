@@ -3,8 +3,17 @@
 #include "base/logging.h"
 #include "game/piece_type.h"
 
+class HexBoardInterface {
+  virtual int size() const = 0;
+  virtual PieceType ConnectionStatus() const = 0;
+  virtual void SetPiece(int row, int col, PieceType type) = 0;
+  virtual void SetPiece(int index, PieceType type) = 0;
+  virtual PieceType GetCell(int row, int col) const = 0;
+  virtual PieceType GetCell(int index) const = 0;
+};
+
 template <int Size>
-class HexBoard {
+class HexBoard : public HexBoardInterface {
  public:
   static constexpr int kSize = Size;
   static constexpr int kNumCells = Size * Size;
@@ -23,6 +32,10 @@ class HexBoard {
   HexBoard(HexBoard&&) = default;
   HexBoard& operator=(HexBoard&&) = default;
 
+  int size() const {
+    return kSize;
+  }
+
   // Every spot on the board
   template <typename T>
   void AvailableSpaces(T* out) const {
@@ -39,8 +52,28 @@ class HexBoard {
   }
 
   // Which sides are connected, or kEmpty if neither.
-  PieceType ConnectionStatus() {
+  PieceType ConnectionStatus() const {
     return winner_;
+  }
+
+  void SetPiece(int row, int col, PieceType type) {
+    SetPiece(Index(row, col), type);
+  }
+
+  void SetPiece(int index, PieceType type) {
+    switch (type) {
+      case PieceType::kHorizontal:
+        SetHorizontalPiece(index);
+        break;
+
+      case PieceType::kVertical:
+        SetVerticalPiece(index);
+        break;
+      case PieceType::kEmpty:
+      default:
+        LOG(FATAL) << "Can only set pieces with horizontal or vertical type.";
+        break;
+    }
   }
 
   void SetHorizontalPiece(int row, int col) {

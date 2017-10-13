@@ -64,3 +64,21 @@ cc_binary(
         "//base",
     ],
 )
+
+cc_library(
+    name = "hex_io",
+    hdrs = ["hex_io.h"],
+    deps = [
+        ":hex_board",
+        "//proto:hex_state_cc_proto",
+    ],
+)
+
+cc_test(
+    name = "hex_io_test",
+    srcs = ["hex_io_test.cc"],
+    deps = [
+        ":hex_io",
+        "//base:gtest",
+    ],
+)

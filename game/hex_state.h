@@ -83,6 +83,9 @@ class HexState {
   int MoveNumber() const {
     return move_number_;
   }
+  HexBoard<Size> Board() const {
+    return board_;
+  }
 
   void Resign() {
     DCHECK(!GameIsOver());
