@@ -21,7 +21,20 @@ cc_binary(
     deps = [
         ":data_cc_proto",
         "//base:init",
+        "//game:hex_io",
         "//mcts",
         "//proto:proto_file",
+    ],
+)
+
+cc_binary(
+    name = "game_state_train",
+    srcs = ["game_state_train.cc"],
+    deps = [
+        ":data_cc_proto",
+        "//base:init",
+        "//game:hex_io",
+        "//proto:proto_file",
+        "@tiny_dnn//:tiny_dnn",
     ],
 )

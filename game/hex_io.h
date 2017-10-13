@@ -21,4 +21,16 @@ HexBoard<Size> FromProto(const hex_ai::proto::HexBoard& proto_board) {
   return board;
 }
 
-// TODO(glalonde) ToProto
+hex_ai::proto::PieceType ToProto(const PieceType& piecetype) {
+  return static_cast<hex_ai::proto::PieceType>(piecetype);
+}
+
+template <int Size>
+hex_ai::proto::HexBoard ToProto(const HexBoard<Size>& board) {
+  hex_ai::proto::HexBoard proto_board;
+  proto_board.set_size(Size);
+  for (int i = 0; i < HexBoard<Size>::kNumCells; ++i) {
+    proto_board.add_positions(ToProto(board.GetCell(i)));
+  }
+  return proto_board;
+}

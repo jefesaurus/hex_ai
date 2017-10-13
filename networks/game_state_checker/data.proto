@@ -4,7 +4,12 @@ import "proto/hex_state.proto";
 
 package hex_ai.proto;
 
+message LabeledHexBoard {
+  HexBoard board = 1;
+  PieceType connection_status = 2;
+}
+
 // Container for a bunch of boards.
-message HexBoards {
-  repeated HexBoard boards = 1;
+message LabeledHexBoards {
+  repeated LabeledHexBoard boards = 1;
 }

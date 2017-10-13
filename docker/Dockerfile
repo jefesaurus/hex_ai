@@ -36,6 +36,7 @@ RUN apt-get -q update \
     && apt-get install --fix-missing -qy \
         libgoogle-perftools-dev \
         libgflags-dev \
+        libtbb-dev \
         binutils-dev
 
 # Python
