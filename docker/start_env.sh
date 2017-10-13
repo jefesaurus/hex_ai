@@ -3,9 +3,9 @@ set -o xtrace
 
 # Kills the existing container and starts a new one
 
-DIR=$(dirname $(readlink -f "$0"))
+DIR="$(cd "$(dirname "$0")" && pwd -P)"
 $DIR/inside_docker.sh
-REPO_ROOT=$(readlink -f $DIR/..)
+REPO_ROOT="$(cd "$(dirname "$DIR/..")" && pwd -P)"
 CONTAINER_BASE=$(basename $REPO_ROOT)
 CONTAINER_ID=hex_ai_container
 CONTAINER_TAG=glalonde/hex_ai

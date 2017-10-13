@@ -1,3 +1,3 @@
 #!/bin/bash
-DIR=$(dirname $(readlink -f "$0"))
+DIR="$(cd "$(dirname "$0")" && pwd -P)"
 $DIR/docker/run_in_docker.sh bash

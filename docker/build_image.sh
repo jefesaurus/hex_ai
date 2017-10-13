@@ -1,6 +1,6 @@
 #!/bin/bash -e
 # Builds the docker image then attemps to upload it.
-DIR=$(dirname $(readlink -f "$0"))
+DIR="$(cd "$(dirname "$0")" && pwd -P)"
 IMAGE_TAG=glalonde/hex_ai
 echo "Image: $IMAGE_TAG"
 cd $DIR

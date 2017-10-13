@@ -1,8 +1,7 @@
 #!/bin/bash
 
 # Forces the command to be run inside the docker container (no-op if already in the docker container)
-
-DIR=$(dirname $(readlink -f "$0"))
+DIR="$(cd "$(dirname "$0")" && pwd -P)"
 $DIR/inside_docker.sh
 
 if [ ! $? -eq 0 ]; then
