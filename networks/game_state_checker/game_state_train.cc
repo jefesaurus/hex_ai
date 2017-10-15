@@ -7,74 +7,87 @@
 
 DEFINE_string(file_in, "/tmp/board_proto.binpb", "File with text protos.");
 
-void ConvertData(const hex_ai::proto::LabeledHexBoard& l_board,
-                 std::vector<tiny_dnn::label_t>* labels,
-                 std::vector<tiny_dnn::vec_t>* samples) {
-  const auto& board = l_board.board();
-  const auto& label = l_board.connection_status();
-  CHECK_EQ(board.size() * board.size(), board.positions().size());
-  samples->emplace_back();
-  auto& board_image = samples->back();
-  board_image.reserve(board.size() * board.size());
-  for (const auto& pixel : board.positions()) {
-    board_image.push_back(pixel / 2.0);
+std::unordered_map<tiny_dnn::label_t, std::vector<tiny_dnn::vec_t>> ConvertData(
+    const hex_ai::proto::LabeledHexBoards& boards) {
+  std::unordered_map<tiny_dnn::label_t, std::vector<tiny_dnn::vec_t>> samples;
+  for (const auto& l_board : boards.boards()) {
+    const auto& board = l_board.board();
+    const auto& label = l_board.connection_status();
+    CHECK_EQ(board.size() * board.size(), board.positions().size());
+    tiny_dnn::vec_t normalized_board;
+    normalized_board.reserve(board.size() * board.size());
+    for (const auto& pixel : board.positions()) {
+      normalized_board.push_back(pixel / 2.0);
+    }
+    samples[as_underlying(label)].emplace_back(std::move(normalized_board));
   }
-  labels->push_back(as_underlying(label));
+  return samples;
 }
 
-void ParseData(const std::string& file_path,
-               std::vector<tiny_dnn::label_t>* labels,
-               std::vector<tiny_dnn::vec_t>* samples) {
+void ParseData(const std::string& file_path, double test_ratio,
+               std::vector<tiny_dnn::label_t>* train_labels,
+               std::vector<tiny_dnn::vec_t>* train_images,
+               std::vector<tiny_dnn::label_t>* test_labels,
+               std::vector<tiny_dnn::vec_t>* test_images) {
   auto maybe_boards =
       ReadBinaryProto<hex_ai::proto::LabeledHexBoards>(file_path);
   CHECK(maybe_boards);
-  for (const auto& board : maybe_boards->boards()) {
-    ConvertData(board, labels, samples);
+  auto samples = ConvertData(*maybe_boards);
+
+  // We want the same number of each kind.
+  int min_num = std::numeric_limits<int>::max();
+  for (const auto& key_boards : samples) {
+    min_num = std::min(static_cast<int>(key_boards.second.size()), min_num);
+  }
+
+  // And partition into train and test data.
+  int train_num = static_cast<int>((1.0 - test_ratio) * min_num);
+  for (const auto& key_boards : samples) {
+    const auto& key = key_boards.first;
+    const auto& boards = key_boards.second;
+
+    for (int i = 0; i < train_num; ++i) {
+      train_labels->push_back(key);
+      train_images->push_back(boards[i]);
+    }
+
+    for (int i = train_num; i < min_num; ++i) {
+      test_labels->push_back(key);
+      test_images->push_back(boards[i]);
+    }
   }
 }
 
 void ConstructCnn(double learning_rate, const int n_train_epochs,
                   const int n_minibatch,
                   tiny_dnn::core::backend_t backend_type) {
-  // input: 32x32x1 (1024 dimensions)  output: 10
   tiny_dnn::network<tiny_dnn::sequential> net;
 
   constexpr int kBoardSize = 11;
 
-  net << tiny_dnn::layers::conv(kBoardSize, kBoardSize, 5, 1, 6,
-                                tiny_dnn::padding::valid, true, 1, 1,
-                                backend_type)
+  net << tiny_dnn::layers::conv(
+             kBoardSize, kBoardSize, 5, 1, 6,  // C1, 1@32x32-in, 6@28x28-out
+             tiny_dnn::padding::valid, true, 1, 1, backend_type)
       << tiny_dnn::activation::tanh()
-      << tiny_dnn::layers::ave_pool(7, 7, 6 /* in channels */,
-                                    1 /* pool size */)
+      << tiny_dnn::layers::conv(7, 7, 3, 6, 16, tiny_dnn::padding::valid, true,
+                                1, 1, backend_type)
       << tiny_dnn::activation::tanh()
-      << tiny_dnn::layers::fc(7 * 7 * 6, 3, true,
+      << tiny_dnn::layers::fc(5 * 5 * 16, 3, true,
                               backend_type)  // F6, 120-in, 10-out
       << tiny_dnn::activation::tanh();
 
   CHECK_EQ(net.in_data_size(), kBoardSize * kBoardSize);
   CHECK_EQ(net.out_data_size(), 3);
 
-  std::vector<tiny_dnn::label_t> all_labels;
-  std::vector<tiny_dnn::vec_t> all_images;
-  ParseData(FLAGS_file_in, &all_labels, &all_images);
+  constexpr double test_ratio = 1.0 / 6.0;
+  std::vector<tiny_dnn::label_t> train_labels;
+  std::vector<tiny_dnn::vec_t> train_images;
+  std::vector<tiny_dnn::label_t> test_labels;
+  std::vector<tiny_dnn::vec_t> test_images;
+  ParseData(FLAGS_file_in, test_ratio, &train_labels, &train_images,
+            &test_labels, &test_images);
 
-  const int num_data = all_labels.size();
-  constexpr double test_ratio = .2;
-  const int num_train = num_data - test_ratio * num_data;
-
-  std::vector<tiny_dnn::label_t> train_labels(all_labels.begin(),
-                                              all_labels.begin() + num_train);
-  std::vector<tiny_dnn::vec_t> train_images(all_images.begin(),
-                                            all_images.begin() + num_train);
-
-  std::vector<tiny_dnn::label_t> test_labels(all_labels.begin() + num_train,
-                                             all_labels.end());
-  std::vector<tiny_dnn::vec_t> test_images(all_images.begin() + num_train,
-                                           all_images.end());
-
-  LOG(INFO) << "Num training samples: " << num_train;
-  LOG(INFO) << "Num testing samples: " << test_labels.size();
+  LOG(INFO) << train_labels.size() << ", " << test_labels.size();
 
   // declare optimization algorithm
   tiny_dnn::adagrad optimizer;

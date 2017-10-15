@@ -69,6 +69,9 @@ static const bool tbl[] = {
   tiny_dnn::parse_mnist_images(data_dir + "/t10k-images.idx3-ubyte",
                                &test_images, -1.0, 1.0, 2, 2);
 
+  LOG(INFO) << train_labels.size();
+  LOG(FATAL) << test_labels[5];
+
   // declare optimization algorithm
   tiny_dnn::adagrad optimizer;
 #ifdef CNN_SINGLE_THREAD
