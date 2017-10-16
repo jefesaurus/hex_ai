@@ -3,13 +3,9 @@
 # Forces the command to be run inside the docker container (no-op if already in the docker container)
 DIR="$(cd "$(dirname "$0")" && pwd -P)"
 $DIR/inside_docker.sh
-
-if [ ! $? -eq 0 ]; then
+if [ $? -eq 0 ]; then
+    echo $@
     $DIR/login.sh $@
 else
-    CONTAINER_ID=hex_ai_container
-    if ! docker ps | grep $CONTAINER_ID > /dev/null 2>&1 ; then
-        $DIR/start_env.sh
-    fi
-    $DIR/open_shell.sh $@
+    $@
 fi

@@ -1,7 +1,5 @@
 FROM ubuntu:17.10
 
-ENV DEBIAN_FRONTEND noninteractive
-
 RUN apt-get -q update \
     && apt-get install --fix-missing -qy \
         apt-transport-https \
@@ -55,4 +53,12 @@ RUN apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /tmp/*
 
-ENTRYPOINT ["/root/container_init.sh"]
+ADD https://storage.googleapis.com/golang/go1.8.3.linux-amd64.tar.gz /tmp/golang.tar.gz
+RUN cd /usr/local && \
+    tar xvfz /tmp/golang.tar.gz && \
+    cd /usr/local/bin && \
+    ln -s /usr/local/go/bin/* . && \
+    GOPATH=/usr go get github.com/bazelbuild/buildtools/buildifier && \
+    chmod a+rx /usr/bin/buildifier
+
+ENTRYPOINT ["/root/docker/entrypoint.sh"]  

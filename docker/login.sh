@@ -1,5 +1,12 @@
-#!/bin/bash -e
-# This logs in to the target user from within the container, then sets up the environment then runs the command
+#!/bin/bash
 DIR="$(cd "$(dirname "$0")" && pwd -P)"
-target_username="${TARGET_USER}"
-exec sudo -Eiu ${target_username} $DIR/env.sh $@
+REPO_ROOT=$(dirname $DIR)
+CONTAINER_TAG=glalonde/hex_ai
+docker run \
+    --rm \
+    -it \
+    -v $REPO_ROOT:$REPO_ROOT \
+    -v $REPO_ROOT/docker/entrypoint.sh:/root/docker/entrypoint.sh \
+    $CONTAINER_TAG \
+    $REPO_ROOT \
+    $@
