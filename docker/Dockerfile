@@ -48,6 +48,8 @@ RUN apt-get -q update \
         python-scipy \
         python3-pip
 
+RUN pip --no-cache-dir install tensorflow
+
 RUN apt-get clean \
     && apt-get autoremove -qy \
     && rm -rf /var/lib/apt/lists/* \
