@@ -4,7 +4,7 @@ import random
 
 import numpy as np
 import tensorflow as tf
-from hex_env import HexEnv
+from secret_sauce.hex_env import HexEnv
 
 
 class Learner(object):
@@ -128,8 +128,8 @@ class Learner(object):
         @return: (next_action, probability distribution over all
             possible actions)
         """
-        played = np.logical_or(state[HexEnv.kVertical],
-                               state[HexEnv.kHorizontal]).flatten()
+        played = np.logical_or(state[HexEnv.VERTICAL],
+                               state[HexEnv.HORIZONTAL]).flatten()
 
         # TODO - do we still need this?
         state = np.asarray(state, dtype=float)

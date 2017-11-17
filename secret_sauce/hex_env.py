@@ -22,6 +22,12 @@ class HexEnv(object):
     self.move_count = 0
     self.pie_rule = pie_rule
 
+  def game_state(self):
+    return self.board
+
+  def to_play(self):
+    return self.to_play
+
   def resign_move(self):
     return self.board_size ** 2
 

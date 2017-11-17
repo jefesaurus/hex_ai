@@ -10,6 +10,18 @@ py_library(
     srcs = ["hex_env.py"],
 )
 
+py_library(
+    name = "learner",
+    srcs = ["learner.py"],
+    deps = [":hex_env"],
+)
+
+
+py_binary(
+    name = "loop",
+    srcs = ["loop.py"],
+    deps = [":learner"],
+)
 
 py_test(
     name = "hex_env_test",
