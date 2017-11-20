@@ -10,23 +10,20 @@ class HexEnv(object):
     return int(not player)
 
   def __init__(self, board_size=11, pie_rule=False):
-    self.reset(board_size, pie_rule)
-
-  # State is stored as 2 boolean boards
-  def reset(self, board_size, pie_rule):
     assert isinstance(board_size, int) and board_size >= 1, 'Invalid board size: {}'.format(board_size)
     self.board_size = board_size
-    self.board = np.zeros((2, board_size, board_size), dtype=bool)
+    self.pie_rule = pie_rule
+    self.reset()
+
+  # State is stored as 2 boolean boards
+  def reset(self):
+    self.board = np.zeros((2, self.board_size, self.board_size), dtype=bool)
     self.to_play = HexEnv.HORIZONTAL
     self.winner = None
     self.move_count = 0
-    self.pie_rule = pie_rule
 
   def game_state(self):
     return copy.deepcopy(self.board)
-
-  def to_play(self):
-    return self.to_play
 
   def resign_move(self):
     return self.board_size ** 2
@@ -66,12 +63,14 @@ class HexEnv(object):
     return out
 
   def make_move(self, action):
-    coords = self.action_to_coordinate(action)
     if not self.valid_move(action):
       raise ValueError
     if action is self.resign_move():
+      self.winner = HexEnv.flip_player(self.to_play)
       self.to_play = HexEnv.flip_player(self.to_play)
+      return
 
+    coords = self.action_to_coordinate(action)
     self.board[self.to_play, coords[0], coords[1]] = True
     self.to_play = HexEnv.flip_player(self.to_play)
 

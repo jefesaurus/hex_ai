@@ -16,7 +16,6 @@ py_library(
     deps = [":hex_env"],
 )
 
-
 py_binary(
     name = "loop",
     srcs = ["loop.py"],
@@ -27,4 +26,22 @@ py_test(
     name = "hex_env_test",
     srcs = ["hex_env_test.py"],
     deps = [":hex_env"],
+)
+
+py_library(
+    name = "memory",
+    srcs = ["memory.py"],
+)
+
+py_library(
+    name = "random_player",
+    srcs = ["random_player.py"],
+    deps = [":hex_env",
+            ":memory"],
+)
+
+py_binary(
+    name = "run_loop",
+    srcs = ["run_loop.py"],
+    deps = [":random_player"],
 )
