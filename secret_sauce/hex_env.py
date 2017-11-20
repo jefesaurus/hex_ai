@@ -23,7 +23,7 @@ class HexEnv(object):
     self.pie_rule = pie_rule
 
   def game_state(self):
-    return self.board
+    return copy.deepcopy(self.board)
 
   def to_play(self):
     return self.to_play

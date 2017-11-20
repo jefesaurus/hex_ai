@@ -107,6 +107,16 @@ class Learner(object):
         indices = np.nonzero(vector == m)[0]
         return random.choice(indices)
 
+    @staticmethod
+    def convert_state(env):
+        """ Argmax that chooses randomly among eligible maximum indices. """
+        state = env.game_state()
+        out = np.zeros((3, board_size*board_size), dtype=bool)
+        out[0, :] = state.(0, :, :).flatten()
+        out[1, :] = state.(1, :, :).flatten()
+        out[2, :] = np.full(out[2,:].shape(), state.to_play())
+        return out
+
     def evaluate_prob_dist(self, sess, state):
         """Computes the probability distribution over all possible actions
         given a board game state.

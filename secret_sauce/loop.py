@@ -26,18 +26,25 @@ with tf.Session() as sess:
         game_length = 0
         
         while game_state.Winner() != None:
+            to_play = env.to_play()
             game_length += 1
             #Choose an action by greedily (with e chance of random action) from the Q-network
-            action, prob_dist = agent.exploration_policy(sess, game_state)
+            current_state = Learner.convert_state(env)
+            action, prob_dist = agent.exploration_policy(sess, current_state)
                 
             #Get new state and reward from environment
-            next_game_state = env.make_move(action)
-            terminal = 0
-            if game_state.winner() is not None:
-                terminal = 1
+            env.make_move(action)
+            next_state = Learner.convert_state(env)
+
+            reward = 0
+            if env.winner() is to_play:
+                reward = 1
+            else if env.winner() is HexEnv.flip_player(to_play):
+                reward = -1
                 
             # TODO flip board
-            agent.update_memory(game_state, action, next_game_state, terminal)
+            agent.update_memory(current_state, action, next_state, reward)
+
             prob_dist_costs = agent.learn(sess, batch_size)
 
             
