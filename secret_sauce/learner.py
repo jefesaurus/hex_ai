@@ -15,8 +15,8 @@ class Learner(object):
     def learn(self, sess, batch_state, transformed_rewards):
         sess.run([self.update_model],
                  feed_dict={
-                     self.input_layer: batch_state,
-                     self.train_labels: transformed_rewards
+                     'input_layer': batch_state,
+                     'train_labels': transformed_rewards
                  })
 
     def create_loss_function(self):
@@ -42,7 +42,10 @@ class Learner(object):
         # Initializing parameters for the network
 
         # batch_size := # examples to bundle during training for efficiency
-        batch_size = 1
+        self.batch_size = tf.placeholder(
+                tf.int32,
+                None,
+                name='batch_size')
 
         # channels := [horizontal, vertical, to_play]
         num_channels = 3
@@ -61,9 +64,11 @@ class Learner(object):
         # training step, which we'll write once we define the graph structure.
         self.input_layer = tf.placeholder(
             tf.float32,
-            shape=(batch_size, image_size, image_size, num_channels))
+            shape=(self.batch_size, image_size, image_size, num_channels),
+            name='input_layer')
         self.train_labels = tf.placeholder(tf.float32,
-                                           shape=(batch_size, num_labels))
+                                           shape=(self.batch_size, num_labels),
+                                           name='train_labels')
 
         # Create initial convolutional layer + ReLU activation function
         conv1_weights = tf.layers.conv2d(
@@ -149,8 +154,11 @@ class Learner(object):
                          (batch_size, board_size, board_size, 3)
         @return: floats of shape (batch_size, board_size, board_size, 1)
         """
-        prob_output = sess.run([self.final_layer],
-                               feed_dict={self.input_layer: state})
+        feed_dict = {
+            'input_layer': state,
+            'batch_size': state.shape[0]
+        }
+        prob_output = sess.run([self.final_layer], feed_dict=feed_dict)
         return prob_output
 
     def exploration_policy(self, sess, env, epsilon=0.1):
