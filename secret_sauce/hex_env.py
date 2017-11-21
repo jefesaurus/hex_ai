@@ -1,5 +1,6 @@
 import numpy as np
 import sys 
+import copy
 
 class HexEnv(object):
   HORIZONTAL = 0

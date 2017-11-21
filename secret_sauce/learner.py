@@ -8,15 +8,8 @@ from secret_sauce.hex_env import HexEnv
 
 
 class Learner(object):
-    def __init__(self):
-        # TODO set up network
-        """
-        # @geoff - where did this come from...?
-        self.inputs = tf.placeholder(shape=[1,16], dtype=tf.float32)
-        W = tf.Variable(tf.random_uniform([16,4], 0, 0.01))
-        self.prob_output_layer = tf.matmul(inputs1, W)
-        self.max_action_layer = tf.argmax(prob_output_layer, 1)
-        """
+    def __init__(self, board_size):
+        self.create_layers(board_size)
 
     def learn(self):
         """Updates the model given one set of predictions compared to the
@@ -34,8 +27,7 @@ class Learner(object):
 
         # TODO - Evaluation metrics (for EVAL mode)
 
-    def create_layers(self,
-                      image_size=11):
+    def create_layers(self, image_size):
         """Initializes the layers in the network.
         """
 
@@ -45,8 +37,8 @@ class Learner(object):
         # batch_size := # examples to bundle during training for efficiency
         batch_size = 1
 
-        # channels := [horizontal, vertical]
-        num_channels = 2
+        # channels := [horizontal, vertical, to_play]
+        num_channels = 3
 
         # num_filters :=
         num_filters = 128
@@ -62,7 +54,7 @@ class Learner(object):
         # training step, which we'll write once we define the graph structure.
 
         # TODO - where do we populate the placeholders..?
-        input_layer = tf.placeholder(
+        self.input_layer = tf.placeholder(
             tf.float32,
             shape=(batch_size, image_size, image_size, num_channels))
         self.train_labels = tf.placeholder(tf.float32,
@@ -70,35 +62,45 @@ class Learner(object):
 
         # Create initial convolutional layer + ReLU activation function
         conv1_weights = tf.layers.conv2d(
-                inputs=input_layer,
+                inputs=self.input_layer,
                 filters=num_filters,
                 kernel_size=[5, 5],
-                padding="valid",
+                padding="same",
                 activation=tf.nn.relu)  # TODO - switch to leaky ReLU
 
         self.layers = [
-            input_layer,
+            self.input_layer,
             conv1_weights
         ]
 
         # Add (num_layers - 2) convolutional hidden layers + ReLU
-        for layer_index in xrange(num_layers - 2):
+        for layer_index in xrange(num_layers - 3):
             conv_weights = tf.layers.conv2d(
                     inputs=self.layers[-1],
                     filters=num_filters,
                     kernel_size=[3, 3],
-                    padding="valid",
+                    padding="same",
                     activation=tf.nn.relu)  # TODO - switch to leaky ReLU
             self.layers.append(conv_weights)
+
+        self.layers.append(tf.layers.conv2d(
+                inputs=self.layers[-1],
+                filters=num_filters,
+                kernel_size=[3, 3],
+                padding="same",
+                activation=tf.nn.relu))
 
         # Add final layer consisting of a sigmoid function
         final_layer = tf.layers.conv2d(
                 inputs=self.layers[-1],
                 filters=1,
                 kernel_size=[1, 1],
-                padding="valid",
+                padding="same",
                 activation=tf.sigmoid)
         self.layers.append(final_layer)
+        self.final_layer = self.layers[-1]
+        #for layer in self.layers:
+        #    print layer.shape
 
     @staticmethod
     def rargmax(vector):
@@ -111,10 +113,10 @@ class Learner(object):
     def convert_state(env):
         """ Argmax that chooses randomly among eligible maximum indices. """
         state = env.game_state()
-        out = np.zeros((3, board_size*board_size), dtype=bool)
-        out[0, :] = state.(0, :, :).flatten()
-        out[1, :] = state.(1, :, :).flatten()
-        out[2, :] = np.full(out[2,:].shape(), state.to_play())
+        out = np.zeros((env.board_size, env.board_size, 3), dtype=bool)
+        out[:, :, 0] = state[0, :, :]
+        out[:, :, 1] = state[1, :, :]
+        out[:, :, 2] = np.full(out[:, :, 2].shape, env.to_play)
         return out
 
     def evaluate_prob_dist(self, sess, state):
@@ -123,8 +125,8 @@ class Learner(object):
 
         @return: list of floats
         """
-        prob_output = sess.run([self.prob_output_layer],
-                               feed_dict={self.inputs: state})
+        prob_output = sess.run([self.final_layer],
+                               feed_dict={self.input_layer: state})
         return prob_output
 
     def exploration_policy(self, sess, state, epsilon=0.1):

@@ -45,3 +45,9 @@ py_binary(
     srcs = ["run_loop.py"],
     deps = [":random_player"],
 )
+
+py_test(
+    name = "learner_test",
+    srcs = ["learner_test.py"],
+    deps = [":learner"],
+)
