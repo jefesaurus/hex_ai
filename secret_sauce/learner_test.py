@@ -19,16 +19,21 @@ class LearnerTest(unittest.TestCase):
     batch_shape.extend(state.shape)
     batch_states = np.zeros(batch_shape)
     batch_states[0] = state
-
     learner = Learner(11)
-
     init = tf.global_variables_initializer()
     with tf.Session() as sess:
       sess.run(init)
-      print learner.evaluate_prob_dist(sess, batch_states)
+      learner.evaluate_prob_dist(sess, batch_states)
 
-
-    print "yay"
+  def test_smoke3(self):
+    env = HexEnv(11)
+    env.make_move(2)
+    env.make_move(3)
+    learner = Learner(11)
+    init = tf.global_variables_initializer()
+    with tf.Session() as sess:
+      sess.run(init)
+      action, prob_dist = learner.exploration_policy(sess, env)
 
 if __name__ == '__main__':
   unittest.main()

@@ -129,7 +129,7 @@ class Learner(object):
                                feed_dict={self.input_layer: state})
         return prob_output
 
-    def exploration_policy(self, sess, state, epsilon=0.1):
+    def exploration_policy(self, sess, env, epsilon=0.1):
         """Search for the next action given the current board state using an
         episilon greedy policy.
 
@@ -140,20 +140,25 @@ class Learner(object):
         @return: (next_action, probability distribution over all
             possible actions)
         """
-        played = np.logical_or(state[HexEnv.VERTICAL],
-                               state[HexEnv.HORIZONTAL]).flatten()
 
-        # TODO - do we still need this?
-        state = np.asarray(state, dtype=float)
+        state = Learner.convert_state(env)
+        batch_shape = [1]
+        batch_shape.extend(state.shape)
+        batch_states = np.zeros(batch_shape)
+        batch_states[0] = state
 
-        prob_dist = self.evaluate_prob_dist(sess, state)
+        prob_dist = self.evaluate_prob_dist(sess, batch_states)[0]
+        played = np.logical_or(state[:, :, HexEnv.VERTICAL],
+                               state[:, :, HexEnv.HORIZONTAL]).flatten()
+        print played.shape
 
         # Randomly select for epsilon amount
-        if np.random.rand() < epsilon:
+        if False and np.random.rand() < epsilon:
             action = np.random.choice(np.where(played == 0)[0])
             return action, prob_dist
 
-        values = np.copy(prob_dist)
+        print prob_dist.shape
+        values = np.copy(prob_dist[0,:,:, :]).flatten()
         # Ensure that the agent never selects played values
         values[played] = -2
 
