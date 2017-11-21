@@ -52,8 +52,6 @@ class Learner(object):
         # This is where training samples and labels are fed to the graph.
         # These placeholder nodes will be fed a batch of training data at each
         # training step, which we'll write once we define the graph structure.
-
-        # TODO - where do we populate the placeholders..?
         self.input_layer = tf.placeholder(
             tf.float32,
             shape=(batch_size, image_size, image_size, num_channels))
@@ -83,6 +81,9 @@ class Learner(object):
                     activation=tf.nn.relu)  # TODO - switch to leaky ReLU
             self.layers.append(conv_weights)
 
+        # NOTE: Example Hex paper seems to change the radius and padding
+        # on the penultimate layer. Might be worth investigating?
+        # https://github.com/kenjyoung/Hexplorer/blob/master/Q_learner/Q_learner.py#L134-L143
         self.layers.append(tf.layers.conv2d(
                 inputs=self.layers[-1],
                 filters=num_filters,
@@ -99,19 +100,30 @@ class Learner(object):
                 activation=tf.sigmoid)
         self.layers.append(final_layer)
         self.final_layer = self.layers[-1]
-        #for layer in self.layers:
-        #    print layer.shape
 
     @staticmethod
     def rargmax(vector):
-        """ Argmax that chooses randomly among eligible maximum indices. """
+        """Argmax that chooses randomly among eligible maximum indices.
+
+        @params: vector - 1-D array
+        @return: index of vector of one of the maximum values in the vector
+        """
         m = np.amax(vector)
         indices = np.nonzero(vector == m)[0]
         return random.choice(indices)
 
     @staticmethod
     def convert_state(env):
-        """ Argmax that chooses randomly among eligible maximum indices. """
+        """Converts the current game state in the HexEnv instance into a
+        single game state that can be added to a batch.
+
+        1. Reshapes from (3, 11, 11) --> (11, 11, 3)
+        2. Sets all cells in the third channel to the player about to
+           play (env.to_play)
+
+        @params: env - HexEnv instance
+        @return: np.array of shape (11, 11, 3)
+        """
         state = env.game_state()
         out = np.zeros((env.board_size, env.board_size, 3), dtype=bool)
         out[:, :, 0] = state[0, :, :]
@@ -120,10 +132,15 @@ class Learner(object):
         return out
 
     def evaluate_prob_dist(self, sess, state):
-        """Computes the probability distribution over all possible actions
-        given a board game state.
+        """Computes the probability distribution of winning (or possibly
+        the estimated reward value) over all possible actions given a
+        board game state. Computes using the convolutional neural network
+        defined in create_layers()
 
-        @return: list of floats
+        @params: sess - tensorflow session instance
+                 state - batch of states, of shape
+                         (batch_size, board_size, board_size, 3)
+        @return: floats of shape (batch_size, board_size, board_size, 1)
         """
         prob_output = sess.run([self.final_layer],
                                feed_dict={self.input_layer: state})
@@ -137,11 +154,15 @@ class Learner(object):
         the action with the highest probability. For episilon percent of the
         time, we will explore and randomly select an unplayed action.
 
-        @return: (next_action, probability distribution over all
-            possible actions)
+        @return: Tuple of next_action and probability distribution over all
+            possible actions, where the probability distribution is
+            np.array of shape (1, 11, 11, 1)
         """
-
+        # Getting the board state
         state = Learner.convert_state(env)
+
+        # Where someone decideds to jankily convert a single board state into
+        # a batch_state, with batch_size = 1
         batch_shape = [1]
         batch_shape.extend(state.shape)
         batch_states = np.zeros(batch_shape)
@@ -150,15 +171,15 @@ class Learner(object):
         prob_dist = self.evaluate_prob_dist(sess, batch_states)[0]
         played = np.logical_or(state[:, :, HexEnv.VERTICAL],
                                state[:, :, HexEnv.HORIZONTAL]).flatten()
-        print played.shape
 
         # Randomly select for epsilon amount
-        if False and np.random.rand() < epsilon:
+        if np.random.rand() < epsilon:
             action = np.random.choice(np.where(played == 0)[0])
             return action, prob_dist
 
-        print prob_dist.shape
-        values = np.copy(prob_dist[0,:,:, :]).flatten()
+        # Reshaping the probability distribution into a 1-D array for rargmax
+        values = np.copy(prob_dist[0, :, :, :]).flatten()
+
         # Ensure that the agent never selects played values
         values[played] = -2
 
