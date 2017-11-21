@@ -40,10 +40,18 @@ py_library(
             ":memory"],
 )
 
+py_library(
+    name = "network_player",
+    srcs = ["network_player.py"],
+    deps = [":hex_env",
+            ":learner",
+            ":memory"],
+)
+
 py_binary(
     name = "run_loop",
     srcs = ["run_loop.py"],
-    deps = [":random_player"],
+    deps = [":random_player", ":network_player"],
 )
 
 py_test(

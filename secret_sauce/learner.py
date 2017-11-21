@@ -66,6 +66,7 @@ class Learner(object):
             tf.float32,
             shape=(self.batch_size, image_size, image_size, num_channels),
             name='input_layer')
+
         self.train_labels = tf.placeholder(tf.float32,
                                            shape=(self.batch_size, num_labels),
                                            name='train_labels')
@@ -82,6 +83,7 @@ class Learner(object):
             self.input_layer,
             conv1_weights
         ]
+        print self.layers[-1].shape
 
         # Add (num_layers - 2) convolutional hidden layers + ReLU
         for layer_index in xrange(num_layers - 3):
@@ -109,7 +111,7 @@ class Learner(object):
                 filters=1,
                 kernel_size=[1, 1],
                 padding="same",
-                activation=tf.sigmoid)
+                activation=tf.tanh)
         self.layers.append(final_layer)
         self.final_layer = self.layers[-1]
 
