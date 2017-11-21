@@ -10,22 +10,29 @@ from secret_sauce.hex_env import HexEnv
 class Learner(object):
     def __init__(self, board_size):
         self.create_layers(board_size)
+        self.create_loss_function()
 
-    def learn(self):
-        """Updates the model given one set of predictions compared to the
-        training labels.
+    def learn(self, sess, batch_state, transformed_rewards):
+        sess.run([self.update_model],
+                 feed_dict={
+                     'input_layer': batch_state,
+                     'train_labels': transformed_rewards
+                 })
+
+    def create_loss_function(self):
+        """Defines the logic to update the neural network based on
+        a gradient descent optimizer (RMS prop) applied to a set of
+        predictions (self.final_layer) and the training reward labels
+        (self.train_labels).
         """
-        # Predictions are the final layer's output?
-        predictions = self.layers[-1]
-
         # Define loss function
-        loss = tf.reduce_sum(tf.square(self.train_labels - predictions))
+        loss = tf.reduce_sum(tf.square(self.train_labels - self.final_layer))
 
         # Update the model
         trainer = tf.train.RMSPropOptimizer(learning_rate=1.0)
         self.update_model = trainer.minimize(loss)
 
-        # TODO - Evaluation metrics (for EVAL mode)
+        # TODO - print out loss for debugging
 
     def create_layers(self, image_size):
         """Initializes the layers in the network.
@@ -35,7 +42,10 @@ class Learner(object):
         # Initializing parameters for the network
 
         # batch_size := # examples to bundle during training for efficiency
-        batch_size = 5
+        self.batch_size = tf.placeholder(
+                tf.int32,
+                None,
+                name='batch_size')
 
         # channels := [horizontal, vertical, to_play]
         num_channels = 3
@@ -54,9 +64,12 @@ class Learner(object):
         # training step, which we'll write once we define the graph structure.
         self.input_layer = tf.placeholder(
             tf.float32,
-            shape=(-1, image_size, image_size, num_channels))
+            shape=(self.batch_size, image_size, image_size, num_channels),
+            name='input_layer')
+
         self.train_labels = tf.placeholder(tf.float32,
-                                           shape=(batch_size, num_labels))
+                                           shape=(self.batch_size, num_labels),
+                                           name='train_labels')
 
         # Create initial convolutional layer + ReLU activation function
         conv1_weights = tf.layers.conv2d(
@@ -143,8 +156,11 @@ class Learner(object):
                          (batch_size, board_size, board_size, 3)
         @return: floats of shape (batch_size, board_size, board_size, 1)
         """
-        prob_output = sess.run([self.final_layer],
-                               feed_dict={self.input_layer: state})
+        feed_dict = {
+            'input_layer': state,
+            'batch_size': state.shape[0]
+        }
+        prob_output = sess.run([self.final_layer], feed_dict=feed_dict)
         return prob_output
 
     def exploration_policy(self, sess, env, epsilon=0.1):
