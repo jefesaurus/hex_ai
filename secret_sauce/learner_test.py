@@ -1,5 +1,4 @@
 import unittest
-
 import numpy as np
 import tensorflow as tf
 from secret_sauce.hex_env import HexEnv
