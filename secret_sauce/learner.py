@@ -10,22 +10,29 @@ from secret_sauce.hex_env import HexEnv
 class Learner(object):
     def __init__(self, board_size):
         self.create_layers(board_size)
+        self.create_loss_function()
 
-    def learn(self):
-        """Updates the model given one set of predictions compared to the
-        training labels.
+    def learn(self, sess, batch_state, transformed_rewards):
+        sess.run([self.update_model],
+                 feed_dict={
+                     self.input_layer: batch_state,
+                     self.train_labels: transformed_rewards
+                 })
+
+    def create_loss_function(self):
+        """Defines the logic to update the neural network based on
+        a gradient descent optimizer (RMS prop) applied to a set of
+        predictions (self.final_layer) and the training reward labels
+        (self.train_labels).
         """
-        # Predictions are the final layer's output?
-        predictions = self.layers[-1]
-
         # Define loss function
-        loss = tf.reduce_sum(tf.square(self.train_labels - predictions))
+        loss = tf.reduce_sum(tf.square(self.train_labels - self.final_layer))
 
         # Update the model
         trainer = tf.train.RMSPropOptimizer(learning_rate=1.0)
         self.update_model = trainer.minimize(loss)
 
-        # TODO - Evaluation metrics (for EVAL mode)
+        # TODO - print out loss for debugging
 
     def create_layers(self, image_size):
         """Initializes the layers in the network.
