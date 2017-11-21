@@ -60,7 +60,7 @@ class HexEnv(object):
     else:
       free_x, free_y = np.where(np.add.reduce(self.board, 0) == 0)
     out = [self.coordinate_to_action([x, y]) for x, y in zip(free_x, free_y)]
-    out.append(self.resign_move())
+    # out.append(self.resign_move())
     return out
 
   def make_move(self, action):

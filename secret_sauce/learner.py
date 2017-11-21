@@ -35,7 +35,7 @@ class Learner(object):
         # Initializing parameters for the network
 
         # batch_size := # examples to bundle during training for efficiency
-        batch_size = 1
+        batch_size = 5
 
         # channels := [horizontal, vertical, to_play]
         num_channels = 3
@@ -54,7 +54,7 @@ class Learner(object):
         # training step, which we'll write once we define the graph structure.
         self.input_layer = tf.placeholder(
             tf.float32,
-            shape=(batch_size, image_size, image_size, num_channels))
+            shape=(-1, image_size, image_size, num_channels))
         self.train_labels = tf.placeholder(tf.float32,
                                            shape=(batch_size, num_labels))
 
@@ -70,6 +70,7 @@ class Learner(object):
             self.input_layer,
             conv1_weights
         ]
+        print self.layers[-1].shape
 
         # Add (num_layers - 2) convolutional hidden layers + ReLU
         for layer_index in xrange(num_layers - 3):
@@ -97,7 +98,7 @@ class Learner(object):
                 filters=1,
                 kernel_size=[1, 1],
                 padding="same",
-                activation=tf.sigmoid)
+                activation=tf.tanh)
         self.layers.append(final_layer)
         self.final_layer = self.layers[-1]
 
