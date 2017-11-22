@@ -5,6 +5,7 @@ CONTAINER_TAG=glalonde/hex_ai
 docker run \
     --rm \
     -it \
+    --net=host \
     -v $REPO_ROOT:$REPO_ROOT \
     -v $REPO_ROOT/docker/entrypoint.sh:/root/docker/entrypoint.sh \
     $CONTAINER_TAG \

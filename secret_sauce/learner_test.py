@@ -8,33 +8,27 @@ from secret_sauce.learner import Learner
 class LearnerTest(unittest.TestCase):
   def test_init(self):
     learner = Learner(11)
-    print "yay"
 
-  def test_evaluate_prob_dist(self):
+  def test_run_estimator(self):
     env = HexEnv(11)
     env.make_move(2)
     env.make_move(3)
     state = Learner.convert_state(env)
-    batch_shape = [1]
-    batch_shape.extend(state.shape)
-    batch_states = np.zeros(batch_shape)
-    batch_states[0] = state
+    state_batch = np.expand_dims(state, 0)
     learner = Learner(11)
     init = tf.global_variables_initializer()
-    with tf.Session() as sess:
-      sess.run(init)
-      learner.evaluate_prob_dist(sess, batch_states)
+    learner.run_estimator(state_batch)
 
   def test_exploration_policy(self):
     env = HexEnv(11)
     env.make_move(2)
     env.make_move(3)
     learner = Learner(11)
-    init = tf.global_variables_initializer()
-    with tf.Session() as sess:
-      sess.run(init)
-      action, prob_dist = learner.exploration_policy(sess, env)
+    action, value_dist = learner.exploration_policy(env)
 
+  def test_vis(self):
+    learner = Learner(11)
+    learner.visualize_graph()
 
 if __name__ == '__main__':
   unittest.main()

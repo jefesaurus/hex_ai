@@ -8,7 +8,7 @@ class RandomPlayer:
   def __init__(self):
     self.memory = Memory(10000)
 
-  def make_move(self, sess, env):
+  def make_move(self, env):
     assert env.winner is None
     # Store the state before action
     obs = Observation()

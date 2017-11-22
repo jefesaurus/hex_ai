@@ -10,11 +10,11 @@ class NetworkPlayer:
     self.memory = Memory(10000)
     self.learner = Learner(board_size)
 
-  def get_action(self, sess, env):
-    action, prob_dist = self.learner.exploration_policy(sess, env)
+  def get_action(self, env):
+    action, prob_dist = self.learner.exploration_policy(env)
     return action
 
-  def make_move(self, sess, env):
+  def make_move(self, env):
     assert env.winner is None
 
     # Store the state before action
@@ -22,7 +22,7 @@ class NetworkPlayer:
     obs.set_state(copy.deepcopy(env))
 
     # random policy
-    action = self.get_action(sess, env)
+    action = self.get_action(env)
 
     obs.set_action(copy.deepcopy(action))
     env.make_move(action)
