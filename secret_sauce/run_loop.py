@@ -8,6 +8,7 @@ def run(board_size, num_episodes, players):
   win_count = {HexEnv.HORIZONTAL:0, HexEnv.VERTICAL:0}
   env = HexEnv(board_size)
   for i in range(num_episodes):
+    print i
     while env.winner is None:
       to_play = env.to_play
       players[to_play].make_move(env)
@@ -22,5 +23,5 @@ BOARD_SIZE = 11
 players = {}
 players[HexEnv.HORIZONTAL] = NetworkPlayer(BOARD_SIZE)
 players[HexEnv.VERTICAL] = RandomPlayer()
-count = run(BOARD_SIZE, 100, players)
+count = run(BOARD_SIZE, 10000, players)
 print count

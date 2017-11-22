@@ -1,40 +1,90 @@
 """Let's train the model to play Hex!
 """
 import random
+import copy
 
 import numpy as np
 import tensorflow as tf
 from secret_sauce.hex_env import HexEnv
+from secret_sauce.memory import Memory
 
+
+# State action pair into state, action, next_state, reward
+# This should be done in the most easily accessible form because each stored
+# observation is used many times.
 class Observation:
-  # The state before the action is applied
-  def set_state(self, state):
-    self.state = state
+    def __init__(self, env, action):
+        env_copy = copy.deepcopy(env)
+        # Store state before the action is applied
+        self.start_state = Learner.convert_state(env_copy)
 
-  # The action that is applied to the state
-  def set_action(self, action):
-    self.action = action
+        # Store action
+        self.action = action
+        env_copy.make_move(action)
+        self.end_state = Learner.convert_state(env_copy)
 
-  # The reward yielded from this action applied to this state
-  def set_reward(self, reward):
-    self.reward = reward
-
+        # The reward yielded from this action applied to this state
+        if env.winner is not None:
+          self.reward = 1
+        else:
+          self.reward = 0
 
 class Learner(object):
     def __init__(self, board_size):
+        self.board_size = board_size
         self.graph = tf.Graph()
         with self.graph.as_default():
-            self._create_layers(board_size)
+            self._create_layers()
             self._create_loss_function()
         self.sess = tf.Session(graph=self.graph)
         with self.graph.as_default():
             self.sess.run(tf.global_variables_initializer())
+        self.memory = Memory(10000)
 
-    def learn(self, batch_state, transformed_rewards):
+    def store_observation(self, start_env, action):
+        self.memory.store(Observation(start_env, action))
+
+    def _sample_memory(self, batch_size):
+        board_batch_shape = (batch_size, self.board_size, self.board_size, 3)
+
+        start_states = np.zeros(board_batch_shape, dtype=bool)
+        actions = np.zeros(batch_size, dtype=uint16)
+        end_states = np.zeros(board_batch_shape, dtype=bool)
+        rewards = np.zeros(batch_size, dtype=float)
+        for i, obs in enumerate(self.memory.sample(batch_size)):
+            start_states[i] = obs.start_state
+            actions[i] = obs.action
+            end_states[i] = obs.end_state
+            reward[i] = obs.reward
+        return start_states, actions, end_states, rewards
+
+    def learn(self, batch_size):
+        if not self.memory.full():
+          return
+        
+        start_states, actions, end_states, rewards = self._sample_memory(batch_size)
+
+        # Q(start_state) <= reward(start_state, action) - max_a(Q(end_state))
+
+        # Current network's estimate for previous states
+        estimated_end_values = self.run_estimator(end_states)
+
+        # Maximum from the next player's perspective, then negate to get the
+        # estimated value from the current player's perspective
+        max_next_state_values = np.maximum(estimated_end_values) * -1
+
+        # Any rewards pulled from memory will be 1, and that is ground truth
+        estimated_rewards = rewards 
+
+        # For everything else, use the negation of the estimate for the next
+        # state
+        estimated_rewards[rewards == 0] = max_next_state_rewards
+
         self.sess.run([self.update_model],
                  feed_dict={
-                     'input_layer': batch_state,
-                     'train_labels': transformed_rewards
+                     'input_layer': start_states,
+                     'action_indices': actions,
+                     'target_values': estimated_rewards 
                  })
 
     def visualize_graph(self):
@@ -47,8 +97,21 @@ class Learner(object):
         predictions (self.final_layer) and the training reward labels
         (self.train_labels).
         """
+
+        # Only train on the delta in previous actions taken.
+        # (batch_index, row, col)
+        self.action_indices = tf.placeholder(tf.int32, shape=(None, 3), name='action_indices')
+
+        # Apply actions_layer indices to get the values from the current network output
+
+        # The idealized value of the positions in the batch
+        self.target_values = tf.placeholder(tf.float32, shape=(None), name='target_values')
+
+        # Current value of previously chosen action assessed by current network
+        self.chosen_action_values = tf.gather(tf.layers.Flatten()(self.final_layer), self.action_indices )
+
         # Define loss function
-        loss = tf.reduce_sum(tf.square(self.train_labels - self.final_layer))
+        loss = tf.reduce_sum(tf.square(self.target_values - self.chosen_action_values))
 
         # Update the model
         trainer = tf.train.RMSPropOptimizer(learning_rate=1.0)
@@ -56,7 +119,7 @@ class Learner(object):
 
         # TODO - print out loss for debugging
 
-    def _create_layers(self, image_size):
+    def _create_layers(self):
         """Initializes the layers in the network.
         """
 
@@ -79,12 +142,8 @@ class Learner(object):
         # training step, which we'll write once we define the graph structure.
         self.input_layer = tf.placeholder(
             tf.float32,
-            shape=(batch_size, image_size, image_size, num_channels),
+            shape=(batch_size, self.board_size, self.board_size, num_channels),
             name='input_layer')
-
-        self.train_labels = tf.placeholder(tf.float32,
-                                           shape=(batch_size, num_labels),
-                                           name='train_labels')
 
         # Create initial convolutional layer + ReLU activation function
         conv1_weights = tf.layers.conv2d(
