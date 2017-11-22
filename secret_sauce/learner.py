@@ -39,6 +39,7 @@ class Learner(object):
         self.sess = tf.Session(graph=self.graph)
         with self.graph.as_default():
             self.sess.run(tf.global_variables_initializer())
+            self.saver = tf.train.Saver()
         self.memory = Memory(10000)
 
     def store_observation(self, start_env, action):
@@ -86,6 +87,11 @@ class Learner(object):
                      'action_indices:0': actions,
                      'target_values:0': estimated_rewards 
                  })
+        self.checkpoint_model()
+
+    def checkpoint_model(self):
+        save_path = self.saver.save(self.sess, "/tmp/model.ckpt")
+        print("Model saved in file: %s" % save_path)
 
     def visualize_graph(self):
         writer = tf.summary.FileWriter("/tmp/tensorboard/", self.sess.graph)
