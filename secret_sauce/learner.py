@@ -3,6 +3,7 @@
 import random
 import copy
 import os
+import sys
 
 import numpy as np
 import tensorflow as tf
@@ -25,7 +26,7 @@ class Observation:
         self.end_state = Learner.convert_state(env_copy)
 
         # The reward yielded from this action applied to this state
-        if env.winner is not None:
+        if env_copy.winner is not None:
           self.reward = 1
         else:
           self.reward = 0
@@ -61,6 +62,7 @@ class Learner(object):
             actions[i] = obs.action
             end_states[i] = obs.end_state
             rewards[i] = obs.reward
+
         return start_states, actions, end_states, rewards
 
     def learn(self, batch_size):

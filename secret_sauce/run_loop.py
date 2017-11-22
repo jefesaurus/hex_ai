@@ -25,7 +25,8 @@ BOARD_SIZE = 11
 # tf graphs are set up when the player object is created.
 players = {}
 same_player = NetworkPlayer(BOARD_SIZE)
-same_player.learner.load_model('/tmp/hex_models/2039_network-player-v0.ckpt')
+iteration = set_me
+same_player.learner.load_model('/tmp/hex_models/%s_network-player-v0.ckpt' % iteration)
 players[HexEnv.HORIZONTAL] = same_player 
 players[HexEnv.VERTICAL] = same_player
 count = run(BOARD_SIZE, 10000, players)
