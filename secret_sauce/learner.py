@@ -47,15 +47,15 @@ class Learner(object):
     def _sample_memory(self, batch_size):
         board_batch_shape = (batch_size, self.board_size, self.board_size, 3)
 
-        start_states = np.zeros(board_batch_shape, dtype=bool)
-        actions = np.zeros(batch_size, dtype=uint16)
-        end_states = np.zeros(board_batch_shape, dtype=bool)
-        rewards = np.zeros(batch_size, dtype=float)
+        start_states = np.zeros(board_batch_shape, dtype='bool')
+        actions = np.zeros(batch_size, dtype='uint16')
+        end_states = np.zeros(board_batch_shape, dtype='bool')
+        rewards = np.zeros(batch_size, dtype='float32')
         for i, obs in enumerate(self.memory.sample(batch_size)):
             start_states[i] = obs.start_state
             actions[i] = obs.action
             end_states[i] = obs.end_state
-            reward[i] = obs.reward
+            rewards[i] = obs.reward
         return start_states, actions, end_states, rewards
 
     def learn(self, batch_size):
@@ -71,20 +71,20 @@ class Learner(object):
 
         # Maximum from the next player's perspective, then negate to get the
         # estimated value from the current player's perspective
-        max_next_state_values = np.maximum(estimated_end_values) * -1
+        max_next_state_values = np.max(estimated_end_values) * -1
 
         # Any rewards pulled from memory will be 1, and that is ground truth
         estimated_rewards = rewards 
 
         # For everything else, use the negation of the estimate for the next
         # state
-        estimated_rewards[rewards == 0] = max_next_state_rewards
+        estimated_rewards[rewards == 0] = max_next_state_values
 
         self.sess.run([self.update_model],
                  feed_dict={
-                     'input_layer': start_states,
-                     'action_indices': actions,
-                     'target_values': estimated_rewards 
+                     'input_layer:0': start_states,
+                     'action_indices:0': actions,
+                     'target_values:0': estimated_rewards 
                  })
 
     def visualize_graph(self):
@@ -100,7 +100,7 @@ class Learner(object):
 
         # Only train on the delta in previous actions taken.
         # (batch_index, row, col)
-        self.action_indices = tf.placeholder(tf.int32, shape=(None, 3), name='action_indices')
+        self.action_indices = tf.placeholder(tf.int32, shape=(None), name='action_indices')
 
         # Apply actions_layer indices to get the values from the current network output
 
@@ -108,7 +108,7 @@ class Learner(object):
         self.target_values = tf.placeholder(tf.float32, shape=(None), name='target_values')
 
         # Current value of previously chosen action assessed by current network
-        self.chosen_action_values = tf.gather(tf.layers.Flatten()(self.final_layer), self.action_indices )
+        self.chosen_action_values = tf.gather(tf.layers.Flatten()(self.final_layer), self.action_indices, axis=1)
 
         # Define loss function
         loss = tf.reduce_sum(tf.square(self.target_values - self.chosen_action_values))
@@ -212,7 +212,7 @@ class Learner(object):
         @return: np.array of shape (11, 11, 3)
         """
         # Create output array shape
-        out = np.zeros((env.board_size, env.board_size, 3), dtype=bool)
+        out = np.zeros((env.board_size, env.board_size, 3), dtype='bool')
         # Fill the final channel with the "to_play" value
         out[:,:,2].fill(env.to_play)
         # Copy the board states into the first two channels
