@@ -6,6 +6,19 @@ import numpy as np
 import tensorflow as tf
 from secret_sauce.hex_env import HexEnv
 
+class Observation:
+  # The state before the action is applied
+  def set_state(self, state):
+    self.state = state
+
+  # The action that is applied to the state
+  def set_action(self, action):
+    self.action = action
+
+  # The reward yielded from this action applied to this state
+  def set_reward(self, reward):
+    self.reward = reward
+
 
 class Learner(object):
     def __init__(self, board_size):
@@ -47,23 +60,18 @@ class Learner(object):
         """Initializes the layers in the network.
         """
 
-        ###############################
-        # Initializing parameters for the network
-
         # batch_size := # examples to bundle during training for efficiency
         # None means dynamically sized
         batch_size = None
 
-        # channels := [horizontal, vertical, to_play]
+        # [horizontal, vertical, to_play]
         num_channels = 3
 
-        # num_filters :=
+        # Number of kernels to learn
         num_filters = 128
 
-        # num_layers := # layers in the neural network
         num_layers = 9
 
-        # num_labels := # possible columns of labels, in our case just 1
         num_labels = 1
 
         # This is where training samples and labels are fed to the graph.

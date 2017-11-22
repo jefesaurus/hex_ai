@@ -1,23 +1,21 @@
-from collections import deque
+import random
 
-class Observation:
-  # The state before the action is applied
-  def set_state(self, state):
-    self.state = state
-
-  # The action that is applied to the state
-  def set_action(self, action):
-    self.action = action
-
-  # The reward yielded from this action applied to this state
-  def set_reward(self, reward):
-    self.reward = reward
-
+# Store data in a circular buffer of size `size` disposes of the oldest values.
 class Memory:
   def __init__(self, size):
-    self.observations = deque([],size)
+    self._data = []
+    self._index = 0
+    self._size = size
 
-  def store(self, observation):
-    self.observations.append(observation)
+  def full():
+    return len(self._data) >= self._size
 
-  # TODO(glalonde) sample
+  def store(self, value):
+    if len(self._data) == self._size:
+        self._data[self._index] = value
+    else:
+        self._data.append(value)
+    self._index = (self._index + 1) % self._size
+
+  def sample(self, num):
+    return [self._data[random.randint(0, len(self._data) - 1)] for i in xrange(num)]

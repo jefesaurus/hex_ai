@@ -33,6 +33,12 @@ py_library(
     srcs = ["memory.py"],
 )
 
+py_test(
+    name = "memory_test",
+    srcs = ["memory_test.py"],
+    deps = [":memory"],
+)
+
 py_library(
     name = "random_player",
     srcs = ["random_player.py"],
