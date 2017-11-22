@@ -59,6 +59,12 @@ py_binary(
     deps = [":random_player", ":network_player"],
 )
 
+py_binary(
+    name = "test_loop",
+    srcs = ["test_loop.py"],
+    deps = [":random_player", ":network_player"],
+)
+
 py_test(
     name = "learner_test",
     srcs = ["learner_test.py"],

@@ -2,6 +2,7 @@
 """
 import random
 import copy
+import os
 
 import numpy as np
 import tensorflow as tf
@@ -30,7 +31,7 @@ class Observation:
           self.reward = 0
 
 class Learner(object):
-    def __init__(self, board_size):
+    def __init__(self, model_name, board_size, checkpoint_period=np.timedelta64(10,'s')):
         self.board_size = board_size
         self.graph = tf.Graph()
         with self.graph.as_default():
@@ -41,6 +42,9 @@ class Learner(object):
             self.sess.run(tf.global_variables_initializer())
             self.saver = tf.train.Saver()
         self.memory = Memory(10000)
+        self.model_name = model_name
+        self.checkpoint_period = checkpoint_period
+        self.last_checkpoint = np.datetime64('now')
 
     def store_observation(self, start_env, action):
         self.memory.store(Observation(start_env, action))
@@ -87,11 +91,28 @@ class Learner(object):
                      'action_indices:0': actions,
                      'target_values:0': estimated_rewards 
                  })
-        self.checkpoint_model()
+        self.learn_count = self.learn_count + 1
+        if np.datetime64('now') - self.last_checkpoint > self.checkpoint_period:
+            self.checkpoint_model('/tmp/hex_models/')
 
-    def checkpoint_model(self):
-        save_path = self.saver.save(self.sess, "/tmp/model.ckpt")
-        print("Model saved in file: %s" % save_path)
+    def model_id(self):
+        return '%s_%s' % (self.learn_count, self.model_name)
+
+    def checkpoint_model(self, checkpoint_dir):
+        checkpoint_name = '%s.ckpt' % self.model_id() 
+        full_path = os.path.join(checkpoint_dir, checkpoint_name)
+        save_path = self.saver.save(self.sess, full_path)
+        print('Model saved in file: %s' % full_path)
+        self.last_checkpoint = np.datetime64('now')
+
+    def load_model(self, full_path):
+        # Unpack the model
+        self.saver.restore(self.sess, full_path)
+
+        # Set the learn count using the filename
+        filename = os.path.splitext(os.path.basename(full_path))[0]
+        learn_count = int(filename.split('_')[0])
+        self.learn_count = learn_count
 
     def visualize_graph(self):
         writer = tf.summary.FileWriter("/tmp/tensorboard/", self.sess.graph)
@@ -270,6 +291,30 @@ class Learner(object):
         if np.random.rand() < epsilon:
             action = np.random.choice(np.where(played == 0)[0])
             return action, estimated_value
+
+        # Reshaping the value distribution into a 1-D array for rargmax
+        values = np.copy(estimated_value[0, :, :, :]).flatten()
+
+        # Ensure that the agent never selects played values
+        values[played] = -2
+
+        # Select the action that has the highest estimated value
+        action = Learner.rargmax(values)
+        return action, estimated_value
+
+    def optimization_policy(self, env):
+        # Getting the board state
+        state = Learner.convert_state(env)
+
+        # Turn this one state into a batch by adding a dimension
+        state_batch = np.expand_dims(state, 0)
+
+        estimated_value = self.run_estimator(state_batch)[0]
+
+        # Get the "played" mask, which represents all cells that are occupied.
+        # This ignores the pie rule
+        played = np.logical_or(state[:, :, HexEnv.VERTICAL],
+                               state[:, :, HexEnv.HORIZONTAL]).flatten()
 
         # Reshaping the value distribution into a 1-D array for rargmax
         values = np.copy(estimated_value[0, :, :, :]).flatten()
