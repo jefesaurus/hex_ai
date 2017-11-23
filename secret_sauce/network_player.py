@@ -7,7 +7,7 @@ from secret_sauce.learner import Learner
 class NetworkPlayer:
   def __init__(self, board_size, learn=True):
     self.learner = Learner('network-player-v0', board_size)
-    self.batch_size = 64
+    self.batch_size = 256
     self.learn = learn
 
   def get_action_and_store(self, env):

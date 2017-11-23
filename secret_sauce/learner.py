@@ -31,6 +31,9 @@ class Observation:
         else:
           self.reward = 0
 
+def leaky_relu(x, alpha=.01):
+    return tf.maximum(x, alpha * x) 
+
 class Learner(object):
     def __init__(self, model_name, board_size, checkpoint_period=np.timedelta64(10,'s')):
         self.board_size = board_size
@@ -46,6 +49,7 @@ class Learner(object):
         self.model_name = model_name
         self.checkpoint_period = checkpoint_period
         self.last_checkpoint = np.datetime64('now')
+        self.learn_count = 0
 
     def store_observation(self, start_env, action):
         self.memory.store(Observation(start_env, action))
@@ -54,12 +58,14 @@ class Learner(object):
         board_batch_shape = (batch_size, self.board_size, self.board_size, 3)
 
         start_states = np.zeros(board_batch_shape, dtype='bool')
-        actions = np.zeros(batch_size, dtype='uint16')
+        actions = np.zeros((batch_size, 3), dtype='uint8')
         end_states = np.zeros(board_batch_shape, dtype='bool')
         rewards = np.zeros(batch_size, dtype='float32')
         for i, obs in enumerate(self.memory.sample(batch_size)):
             start_states[i] = obs.start_state
-            actions[i] = obs.action
+            actions[i, 0] = i 
+            actions[i, 1] = obs.action // self.board_size
+            actions[i, 2] = obs.action % self.board_size
             end_states[i] = obs.end_state
             rewards[i] = obs.reward
 
@@ -87,15 +93,16 @@ class Learner(object):
         # state
         estimated_rewards[rewards == 0] = max_next_state_values
 
-        self.sess.run([self.update_model],
+        _, train_loss, reg_loss  = self.sess.run([self.update_model, self.training_loss, self.regularization_loss],
                  feed_dict={
                      'input_layer:0': start_states,
-                     'action_indices:0': actions,
+                     'action_coords:0': actions,
                      'target_values:0': estimated_rewards 
                  })
         self.learn_count = self.learn_count + 1
+        print train_loss, reg_loss 
         if np.datetime64('now') - self.last_checkpoint > self.checkpoint_period:
-            self.checkpoint_model('/tmp/hex_models/')
+              self.checkpoint_model('/tmp/hex_models/')
 
     def model_id(self):
         return '%s_%s' % (self.learn_count, self.model_name)
@@ -129,7 +136,7 @@ class Learner(object):
 
         # Only train on the delta in previous actions taken.
         # (batch_index, row, col)
-        self.action_indices = tf.placeholder(tf.int32, shape=(None), name='action_indices')
+        self.action_coords = tf.placeholder(tf.int32, shape=(None, 3), name='action_coords')
 
         # Apply actions_layer indices to get the values from the current network output
 
@@ -137,14 +144,20 @@ class Learner(object):
         self.target_values = tf.placeholder(tf.float32, shape=(None), name='target_values')
 
         # Current value of previously chosen action assessed by current network
-        self.chosen_action_values = tf.gather(tf.layers.Flatten()(self.final_layer), self.action_indices, axis=1)
+        self.chosen_action_values = tf.gather_nd(tf.squeeze(self.final_layer, axis=3), self.action_coords)
+        print self.final_layer.shape
+        print self.action_coords.shape
+        print self.chosen_action_values.shape
+
+        self.regularization_loss = .01 * tf.reduce_sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
+        self.training_loss = tf.losses.mean_squared_error(self.target_values, self.chosen_action_values)
 
         # Define loss function
-        loss = tf.reduce_sum(tf.square(self.target_values - self.chosen_action_values))
+        self.loss = self.training_loss + self.regularization_loss
 
         # Update the model
-        trainer = tf.train.RMSPropOptimizer(learning_rate=1.0)
-        self.update_model = trainer.minimize(loss)
+        trainer = tf.train.RMSPropOptimizer(learning_rate=.001, decay=.9)
+        self.update_model = trainer.minimize(self.loss)
 
         # TODO - print out loss for debugging
 
@@ -180,7 +193,8 @@ class Learner(object):
                 filters=num_filters,
                 kernel_size=[5, 5],
                 padding="same",
-                activation=tf.nn.relu)  # TODO - switch to leaky ReLU
+                kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-7),
+                activation=leaky_relu)  # TODO - switch to leaky ReLU
 
         self.layers = [
             self.input_layer,
@@ -194,7 +208,8 @@ class Learner(object):
                     filters=num_filters,
                     kernel_size=[3, 3],
                     padding="same",
-                    activation=tf.nn.relu)  # TODO - switch to leaky ReLU
+                    kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-7),
+                    activation=leaky_relu)  # TODO - switch to leaky ReLU
             self.layers.append(conv_weights)
 
         # NOTE: Example Hex paper seems to change the radius and padding
@@ -204,14 +219,16 @@ class Learner(object):
                 inputs=self.layers[-1],
                 filters=num_filters,
                 kernel_size=[3, 3],
+                kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-7),
                 padding="same",
-                activation=tf.nn.relu))
+                activation=leaky_relu))
 
         # Add final layer consisting of a sigmoid function
         final_layer = tf.layers.conv2d(
                 inputs=self.layers[-1],
                 filters=1,
                 kernel_size=[1, 1],
+                kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-7),
                 padding="same",
                 activation=tf.tanh)
         self.layers.append(final_layer)
