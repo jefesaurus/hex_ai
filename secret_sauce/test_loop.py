@@ -25,7 +25,7 @@ BOARD_SIZE = 11
 # tf graphs are set up when the player object is created.
 players = {}
 network_player = NetworkPlayer(BOARD_SIZE, False)
-iteration = 4617
+iteration = 21734 
 network_player.learner.load_model('/tmp/hex_models/%s_network-player-v0.ckpt' % iteration)
 players[HexEnv.HORIZONTAL] = network_player 
 players[HexEnv.VERTICAL] = RandomPlayer() 

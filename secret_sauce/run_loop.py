@@ -25,7 +25,7 @@ BOARD_SIZE = 11
 # tf graphs are set up when the player object is created.
 players = {}
 same_player = NetworkPlayer(BOARD_SIZE)
-iteration = -1
+iteration = -1 
 if iteration > 0:
   print 'Loading from file'
   same_player.learner.load_model('/tmp/hex_models/%s_network-player-v0.ckpt' % iteration)

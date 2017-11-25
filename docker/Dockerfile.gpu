@@ -61,6 +61,8 @@ RUN cd /usr/local && \
     GOPATH=/usr go get github.com/bazelbuild/buildtools/buildifier && \
     chmod a+rx /usr/bin/buildifier
 
-RUN pip --no-cache-dir install tensorflow
+RUN pip --no-cache-dir install tensorflow-gpu
+
+ENV LD_LIBRARY_PATH /usr/local/cuda/extras/CUPTI/lib64:$LD_LIBRARY_PATH
 
 ENTRYPOINT ["/root/docker/entrypoint.sh"]  
