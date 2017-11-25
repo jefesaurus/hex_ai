@@ -10,7 +10,7 @@ def run(board_size, num_episodes, players):
   win_count = {HexEnv.HORIZONTAL:0, HexEnv.VERTICAL:0}
   env = HexEnv(board_size)
   for i in range(num_episodes):
-    print i
+    print i, win_count
     sys.stdout.flush()
     while env.winner is None:
       to_play = env.to_play
@@ -24,12 +24,10 @@ BOARD_SIZE = 11
 
 # tf graphs are set up when the player object is created.
 players = {}
-same_player = NetworkPlayer(BOARD_SIZE)
-iteration = -1 
-if iteration > 0:
-  print 'Loading from file'
-  same_player.learner.load_model('/tmp/hex_models/%s_network-player-v0.ckpt' % iteration)
-players[HexEnv.HORIZONTAL] = same_player 
-players[HexEnv.VERTICAL] = same_player
-count = run(BOARD_SIZE, 100000, players)
+network_player = NetworkPlayer(BOARD_SIZE, False)
+iteration = 21734 
+network_player.learner.load_model('/tmp/hex_models/%s_network-player-v0.ckpt' % iteration)
+players[HexEnv.HORIZONTAL] = network_player 
+players[HexEnv.VERTICAL] = RandomPlayer() 
+count = run(BOARD_SIZE, 1000, players)
 print count

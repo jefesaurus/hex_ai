@@ -99,3 +99,10 @@ bind(
     name = "six",
     actual = "@six_archive//:six",
  )
+
+
+git_repository(
+  name = "com_deepmind_sonnet",
+  remote = "https://github.com/deepmind/sonnet",
+  tag = "v1.14"
+)

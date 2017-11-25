@@ -7,7 +7,7 @@ class Memory:
     self._index = 0
     self._size = size
 
-  def full():
+  def full(self):
     return len(self._data) >= self._size
 
   def store(self, value):

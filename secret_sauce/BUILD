@@ -13,7 +13,7 @@ py_library(
 py_library(
     name = "learner",
     srcs = ["learner.py"],
-    deps = [":hex_env"],
+    deps = [":hex_env", ":memory"],
 )
 
 py_binary(
@@ -42,8 +42,7 @@ py_test(
 py_library(
     name = "random_player",
     srcs = ["random_player.py"],
-    deps = [":hex_env",
-            ":memory"],
+    deps = [":hex_env"],
 )
 
 py_library(
@@ -57,6 +56,12 @@ py_library(
 py_binary(
     name = "run_loop",
     srcs = ["run_loop.py"],
+    deps = [":random_player", ":network_player"],
+)
+
+py_binary(
+    name = "test_loop",
+    srcs = ["test_loop.py"],
     deps = [":random_player", ":network_player"],
 )
 
